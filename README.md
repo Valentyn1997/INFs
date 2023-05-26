@@ -1,7 +1,7 @@
 # INFs
 Normalizing Flows for Interventional Density Estimation
 
-<img width="1204" alt="image" src="https://user-images.githubusercontent.com/23198776/226435117-c26c4881-8e51-4773-874f-9ad9e97ca6a2.png">
+<img width="1335" alt="image" src="https://github.com/Valentyn1997/INFs/assets/23198776/a3557641-9ac4-48de-b596-4c6679e56fc2">
 
 The project is built with following Python libraries:
 1. [Pyro](https://pyro.ai/) - deep learning and probabilistic models (MDNs, NFs)
