@@ -1,0 +1,33 @@
+# @package _global_
+model:
+  _target_: src.models.kme.PluginKernelMeanEmbedding
+  name: kme
+
+  # KME hparams
+  sd_y: 0.1                     # outcome kernel smoothness
+  median_sd_y_heuristic: True   # use median heuristic, if True, value of sd_y is ignored
+  sd_x: 10                      # conditional kernel smoothness
+  eps: 10                       # regularization parameter
+  normalized: True              # perform re-normalization
+  norm_bins: 1000               # number bins for re-normalization
+
+  # Tuning
+  tune_hparams: True
+  tune_range: 1
+  tune_type: grid_search
+  hparams_grid:
+    sd_x:
+      - 0.0001
+      - 0.001
+      - 0.01
+      - 0.1
+      - 1
+      - 10
+      - 20
+    eps:
+      - 0.0001
+      - 0.001
+      - 0.01
+      - 0.1
+      - 1
+      - 10

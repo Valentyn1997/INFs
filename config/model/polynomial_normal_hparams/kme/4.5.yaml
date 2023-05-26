@@ -1,0 +1,8 @@
+# @package _global_
+model:
+  sd_x: 20.0
+  eps: 0.001
+
+dataset:
+  cov_shift: 4.5
+  n_samples: 1000

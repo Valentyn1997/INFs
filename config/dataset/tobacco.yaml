@@ -1,0 +1,11 @@
+# @package _global_
+dataset:
+  _target_: src.data.TobaccoControlProgram
+  name: tobacco
+  normalize_out: True         # normilize outcome
+  test_size: 0.0001
+
+model:
+  dim_treat: 1
+  dim_cov: 5
+  dim_out: 1

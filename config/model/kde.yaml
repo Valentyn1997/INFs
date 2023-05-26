@@ -1,0 +1,31 @@
+# @package _global_
+model:
+  _target_: src.models.kde.AIPTWKernelEstimator
+  name: kde
+
+  # KDE hparams
+  sd_y: 1.0                       # outcome kernel smoothness
+  median_sd_y_heuristic: True     # use median heuristic, if True, value of sd_y is ignored
+  normalized: True                # perform re-normalization
+  norm_bins: 1000                 # number bins for re-normalization
+  pure_functional: False          # True - functional regression, False - simple regression with functional on top
+  clip_prop: 0.05                 # clipping too low propensity scores
+  hid_dim_multiplier: 10          # ratio between the dimentionalities of the representation and the outcome
+  batch_size: ???
+  num_epochs: 10000
+  lr: ???
+  prop_alpha: 1.0                 # alpha (0.01, if pure_functional == False)
+
+  # Tuning
+  tune_hparams: True
+  tune_range: 1
+  tune_type: grid_search
+  hparams_grid:
+    lr:
+      - 1e-3
+      - 5e-3
+      - 1e-2
+    batch_size:
+      - 32
+      - 64
+      - 128

@@ -1,0 +1,11 @@
+# @package _global_
+dataset:
+  _target_: src.data.HCMNIST
+  name: hcmnist
+  normalize_out: True           # normilize outcome
+  seed: 10
+
+model:
+  dim_treat: 1
+  dim_cov: 785
+  dim_out: 1

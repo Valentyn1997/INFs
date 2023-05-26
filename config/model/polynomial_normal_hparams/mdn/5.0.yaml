@@ -1,0 +1,11 @@
+# @package _global_
+model:
+  teacher_num_comp: 10
+  noise_std_X: 0.01
+  noise_std_Y: 0.01
+  teacher_lr: 0.001
+  batch_size: 64
+
+dataset:
+  cov_shift: 5.0
+  n_samples: 1000

@@ -1,0 +1,9 @@
+# @package _global_
+model:
+  teacher_count_bins: 20
+  noise_std_X: 0.1
+  noise_std_Y: 0.0
+  teacher_lr: 0.005
+  batch_size: 32
+
+  student_count_bins: 10

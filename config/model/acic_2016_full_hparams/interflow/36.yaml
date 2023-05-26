@@ -1,0 +1,9 @@
+# @package _global_
+dataset:
+  dataset_ix: 36
+model:
+  batch_size: 64
+  noise_std_X: 0.05
+  noise_std_Y: 0.1
+  teacher_count_bins: 5
+  teacher_lr: 0.001

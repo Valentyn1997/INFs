@@ -1,0 +1,11 @@
+# @package _global_
+dataset:
+  _target_: src.data.ACIC
+  name: acic_2018
+  collection: True
+  year: 2018
+
+model:
+  dim_treat: 1
+  dim_cov: 177
+  dim_out: 1

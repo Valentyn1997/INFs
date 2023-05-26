@@ -1,0 +1,42 @@
+# @package _global_
+model:
+  _target_: src.models.plugins.PluginMixtureDensityMarginalizedTeacher
+  name: mdn
+
+  # MDN hparams
+  teacher_num_comp: 5               # number of mixture components
+  teacher_hid_dim_multiplier: 10    # ratio between the dimentionalities of the representation and the outcome
+  noise_std_X: 0.01                 # noise regularization for covariates
+  noise_std_Y: 0.01                 # noise regularization for outcomes
+  teacher_lr: 0.005
+  batch_size: 64
+  num_epochs: 5000
+
+  # General hparams
+  n_mc: 10000
+
+  # Tuning
+  tune_hparams: True
+  tune_range: 50                    # number of trials for random search
+  tune_type: choice
+  hparams_grid:
+    teacher_num_comp:
+      - 5
+      - 10
+      - 20
+    noise_std_X:
+      - 0.0
+      - 0.01
+      - 0.05
+      - 0.1
+    noise_std_Y:
+      - 0.0
+      - 0.01
+      - 0.05
+      - 0.1
+    teacher_lr:
+      - 1e-3
+      - 5e-3
+    batch_size:
+      - 32
+      - 64

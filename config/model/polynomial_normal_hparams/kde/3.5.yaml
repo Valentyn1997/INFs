@@ -1,0 +1,8 @@
+# @package _global_
+model:
+  batch_size: 32
+  lr: 0.001
+
+dataset:
+  cov_shift: 3.5
+  n_samples: 1000

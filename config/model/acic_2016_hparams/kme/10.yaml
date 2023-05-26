@@ -1,0 +1,6 @@
+# @package _global_
+dataset:
+  dataset_ix: 10
+model:
+  eps: 0.001
+  sd_x: 20

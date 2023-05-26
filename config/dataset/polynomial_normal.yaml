@@ -1,0 +1,23 @@
+# @package _global_
+dataset:
+  _target_: src.data.PolynomialNormal
+  name: polynomial_normal
+  seed: 42
+  n_samples: 1000
+  k_fold: 10
+  normalize_out: True                  # normilize outcome
+
+  cov_shift: 2.5                       # b
+  C0:
+    - 1.5
+    - 2.18
+    - 0.0
+  C1:
+    - 2.0
+    - -1.82
+    - 1.0
+
+model:
+  dim_treat: 1
+  dim_cov: 1
+  dim_out: 1

@@ -1,0 +1,4 @@
+# @package _global_
+model:
+  sd_x: 1.0
+  eps: 0.0001

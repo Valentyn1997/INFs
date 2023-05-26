@@ -1,0 +1,54 @@
+# @package _global_
+model:
+  _target_: src.models.interflow.AIPTWInterFlowTeacherStudent
+  name: aiptw_teacher_student
+
+  # Teacher hparams
+  teacher_count_bins: ???         # number of knots for teacher
+  teacher_hid_dim_multiplier: 10  # ratio between the dimentionalities of the representation and the outcome
+  noise_std_X: ???                # noise regularization for covariates
+  noise_std_Y: ???                # noise regularization for outcomes
+  teacher_lr: ???
+  batch_size: ???
+  num_epochs: 5000
+
+  # Student hparams
+  noise_ce: 0.0                   # noise regularization for cross-entropy
+  student_count_bins:             # number of knots for student
+  student_quadrature: rect        # rect / trap - quadrature method (rectangle / trapezoidal)
+  student_lr: 0.005
+  student_mode: batch             # batch / full  - using a batch of data or full dataset for one iteration of student
+  student_nce_bins: 100           # number of bins to approximate cross-entropy
+  student_ema: 0.995              # EMA of model weights for student
+  student_num_epochs: 4000
+
+  # General hparams
+  prop_alpha: 1.0                 # alpha
+  clip_prop: 0.05                 # drop observations with too low propensity
+  n_mc: 10000                     # number of samples for ATE estimation
+
+  # Tuning
+  tune_hparams: False
+  tune_range: 50                  # number of trials for random search
+  tune_type: choice
+  hparams_grid:
+    teacher_count_bins:
+      - 5
+      - 10
+      - 20
+    noise_std_X:
+      - 0.0
+      - 0.01
+      - 0.05
+      - 0.1
+    noise_std_Y:
+      - 0.0
+      - 0.01
+      - 0.05
+      - 0.1
+    teacher_lr:
+      - 1e-3
+      - 5e-3
+    batch_size:
+      - 32
+      - 64

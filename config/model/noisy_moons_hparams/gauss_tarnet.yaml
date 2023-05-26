@@ -1,0 +1,8 @@
+# @package _global_
+model:
+  noise_std_X: 0.01
+  noise_std_Y: 0.05
+  teacher_lr: 0.001
+  batch_size: 64
+
+  num_epochs: 10000

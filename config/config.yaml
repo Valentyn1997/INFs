@@ -1,0 +1,32 @@
+# Dataset for training / evaluation -- specific values should be filled for each dataset
+dataset:
+  collection: False                 # True for acic_2016 and acic_2018
+  test_size: 0.2                    # train/test split ratio
+  n_shuffle_splits: 1
+  dataset_ix:                       # dataset index for acic_2016 and acic_2018
+
+# Model specific parameters
+model:
+  dim_treat: ???                    # will be defined with +dataset=...
+  dim_cov: ???                      # will be defined with +dataset=...
+  dim_out: ???                      # will be defined with +dataset=...
+  treat_options:
+    - 0
+    - 1
+  tune_hparams: ???
+  tune_type: ???
+  hparams_grid:
+  tune_range:
+
+exp:
+  seed: 10
+  gpus:
+  logging: True
+  plotting: True
+  mlflow_uri: http://127.0.0.1:5000 # MlFlow server is located on 10.195.8.58
+
+# Hydra defaults
+defaults:
+  - _self_
+  - override hydra/hydra_logging: colorlog
+  - override hydra/job_logging: colorlog

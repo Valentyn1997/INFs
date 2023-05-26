@@ -1,0 +1,22 @@
+# external requirements
+click
+Sphinx
+coverage
+awscli
+flake8
+python-dotenv>=0.5.1
+
+numpy
+pandas
+pyro-ppl
+sklearn
+torch
+matplotlib
+hydra-core
+hydra_colorlog
+pytorch-lightning
+mlflow
+ray[tune]
+pyreadr
+
+git+https://github.com/fadel/pytorch_ema

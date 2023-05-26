@@ -1,0 +1,6 @@
+# @package _global_
+dataset:
+  dataset_ix: 13
+model:
+  batch_size: 32
+  lr: 0.001

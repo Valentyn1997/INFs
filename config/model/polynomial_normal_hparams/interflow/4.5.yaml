@@ -1,0 +1,13 @@
+# @package _global_
+model:
+  teacher_count_bins: 20
+  noise_std_X: 0.05
+  noise_std_Y: 0.0
+  teacher_lr: 1e-3
+  batch_size: 64
+
+  student_count_bins: 5
+
+dataset:
+  cov_shift: 4.5
+  n_samples: 1000

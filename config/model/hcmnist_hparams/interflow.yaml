@@ -1,0 +1,12 @@
+# @package _global_
+model:
+  teacher_count_bins: 5
+  noise_std_X: 0.1
+  noise_std_Y: 0.01
+  teacher_lr: 0.005
+  batch_size: 32
+
+  teacher_hid_dim_multiplier: 30
+  num_epochs: 15000
+  student_num_epochs: 5000
+  student_count_bins: 10
