@@ -1,6 +1,6 @@
 # @package _global_
 dataset:
-  _target_: src.data.ACIC
+  _target_: src.data.ACIC     # Will be dynamically instantiated
   name: acic_2018
   collection: True
   year: 2018

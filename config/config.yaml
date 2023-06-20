@@ -13,16 +13,16 @@ model:
   treat_options:
     - 0
     - 1
-  tune_hparams: ???
-  tune_type: ???
+  tune_hparams: ???                 # will be defined with +model=...
+  tune_type: ???                    # will be defined with +model=...
   hparams_grid:
   tune_range:
 
 exp:
   seed: 10
   gpus:
-  logging: True
-  plotting: True
+  logging: True                     # Logging to MlFlow
+  plotting: True                    # Plot interventional and conditional densities after training
   mlflow_uri: http://127.0.0.1:5000 # MlFlow server is located on 10.195.8.58
 
 # Hydra defaults

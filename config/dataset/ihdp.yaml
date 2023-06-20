@@ -1,8 +1,8 @@
 # @package _global_
 dataset:
-  _target_: src.data.IHDP
+  _target_: src.data.IHDP     # Will be dynamically instantiated
   name: ihdp
-  normalize_out: True         # normilize outcome
+  normalize_out: True         # Normalize outcome
   k_fold: 10
 
 model:

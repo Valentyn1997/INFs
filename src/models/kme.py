@@ -30,7 +30,8 @@ class PluginKernelMeanEmbedding(InterventionalDensityEstimator):
         self.normalized = args.model.normalized
 
         # Model parameters
-        self.normalized_rbf_y = {treat_option: NormalizedRBF(np.sqrt(self.sd_y[treat_option] / 2)) for treat_option in self.treat_options}
+        self.normalized_rbf_y = \
+            {treat_option: NormalizedRBF(np.sqrt(self.sd_y[treat_option] / 2)) for treat_option in self.treat_options}
         self.rbf_x = RBF(np.sqrt(self.sd_x / 2))
         self.betas = {}
         self.norm_const = np.array([1.0, 1.0])  # Will be updated after fit

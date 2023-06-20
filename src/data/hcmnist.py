@@ -85,11 +85,11 @@ class HCMNIST(datasets.MNIST):
 
     def __getitem__(self, index):
         x = ((self.data[index].astype("float32") / 255.0) - 0.1307) / 0.3081
-        t = self.t[index : index + 1]
+        t = self.t[index: index + 1]
         if self.mode == "pi":
             return x, t
         elif self.mode == "mu":
-            return np.hstack([x, t]), self.y[index : index + 1]
+            return np.hstack([x, t]), self.y[index: index + 1]
         else:
             raise NotImplementedError(
                 f"{self.mode} not supported. Choose from 'pi'  for propensity models or 'mu' for expected outcome models"
@@ -126,21 +126,13 @@ def fit_phi_model(root, edges):
     model = {}
     digits = torch.unique(ds.targets)
     for i, digit in enumerate(digits):
-        lo, hi = edges[i : i + 2]
+        lo, hi = edges[i: i + 2]
         ind = ds.targets == digit
         data_ind = data[ind].view(ind.sum(), -1)
         means = data_ind.mean(dim=-1)
         mu = means.mean()
         sigma = means.std()
-        model.update({
-                digit.item(): {
-                    "mu": mu.item(),
-                    "sigma": sigma.item(),
-                    "lo": lo.item(),
-                    "hi": hi.item(),
-                }
-            }
-        )
+        model.update({digit.item(): {"mu": mu.item(), "sigma": sigma.item(), "lo": lo.item(), "hi": hi.item()}})
     return model
 
 
@@ -161,12 +153,7 @@ def complete_propensity(x, u, gamma, beta=0.75):
 
 
 def f_mu(x, t, u, theta=4.0):
-    mu = (
-        (2 * t - 1) * x
-        + (2.0 * t - 1)
-        - 2 * np.sin((4 * t - 2) * x)
-        - (theta * u - 2) * (1 + 0.5 * x)
-    )
+    mu = ((2 * t - 1) * x + (2.0 * t - 1) - 2 * np.sin((4 * t - 2) * x) - (theta * u - 2) * (1 + 0.5 * x))
     return mu
 
 

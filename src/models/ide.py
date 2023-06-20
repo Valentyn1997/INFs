@@ -28,8 +28,8 @@ def fit_eval_kfold(args: dict, orig_hparams: DictConfig, model_cls, train_data_d
     kf = KFold(n_splits=5, random_state=orig_hparams.exp.seed, shuffle=True)
     val_metrics = []
     for train_index, val_index in kf.split(train_data_dict['cov_f']):
-        ttrain_data_dict, val_data_dict = subset_by_indices(train_data_dict, train_index), \
-                                          subset_by_indices(train_data_dict, val_index)
+        ttrain_data_dict, val_data_dict = \
+            subset_by_indices(train_data_dict, train_index), subset_by_indices(train_data_dict, val_index)
 
         model = model_cls(new_params, **kwargs)
         model.fit(train_data_dict=ttrain_data_dict, log=False)
@@ -99,7 +99,7 @@ class InterventionalDensityEstimator(torch.nn.Module):
 
     def set_norm_consts(self, add_bound=2.5):
         self.norm_const = [1.0, 1.0]
-        logger.info(f'Calculating normalization constants')
+        logger.info('Calculating normalization constants')
 
         for i, treat_option in enumerate(self.treat_options):
             if self.dim_out == 1:

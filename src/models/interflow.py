@@ -153,7 +153,6 @@ class PluginInterFlowMarginalizedTeacher(InterventionalDensityEstimator):
             log_prob = self.cond_flow_dist.condition(context).log_prob(out_f)
         return log_prob
 
-
     def inter_log_prob(self, treat_pot, out_pot):
         if out_pot.shape[0] > 25000 or self.cov_f.shape[0] > 25000:
             log_prob_pot = torch.zeros((out_pot.shape[0], 1))
@@ -190,7 +189,7 @@ class PluginInterFlowMarginalizedTeacher(InterventionalDensityEstimator):
     def inter_sample(self, treat_pot, n_samples):
         return self.inter_teachers_sample(treat_pot, n_samples)
 
-    def inter_teachers_sample(self,  treat_pot, n_samples, cov_f_batch=None, marginalize=True):
+    def inter_teachers_sample(self, treat_pot, n_samples, cov_f_batch=None, marginalize=True):
         n = treat_pot.shape[0]
         _, treat_pot, _ = self.prepare_tensors(None, treat_pot, None, kind='torch')
         cov_f = self.cov_f.repeat(n, 1, 1) if cov_f_batch is None else cov_f_batch.repeat(n, 1, 1)
@@ -251,7 +250,8 @@ class PluginInterFlowTeacherStudent(PluginInterFlowMarginalizedTeacher):
             self.auto_regressive_nn = [AutoRegressiveNN(self.dim_out, [self.dim_hid],
                                                         param_dims=[self.student_count_bins,
                                                                     self.student_count_bins,
-                                                                    (self.student_count_bins - 1)]).float() for _ in self.treat_options]
+                                                                    (self.student_count_bins - 1)]).float()
+                                       for _ in self.treat_options]
 
             self.spline_transform = [T.SplineAutoregressive(self.dim_out, arn,
                                                             order='quadratic',
@@ -380,7 +380,8 @@ class PluginInterFlowTeacherStudent(PluginInterFlowMarginalizedTeacher):
                 for i, treat_option in enumerate(self.treat_options):
                     if sum(treat_pot == treat_option) > 0:
                         log_prob_pot[treat_pot == treat_option] = \
-                            self.flow_dist[i].log_prob(out_pot[treat_pot.reshape(-1) == treat_option].reshape(-1, self.dim_out)).squeeze()
+                            self.flow_dist[i].log_prob(
+                                out_pot[treat_pot.reshape(-1) == treat_option].reshape(-1, self.dim_out)).squeeze()
 
         return log_prob_pot
 
@@ -480,7 +481,8 @@ class AIPTWInterFlowTeacherStudent(PluginInterFlowTeacherStudent):
                     noised_out_pot, bin_size = self._get_out_pot_grid()
                     log_prob_pot = self.flow_dist[i].log_prob(noised_out_pot).squeeze()
                     with torch.no_grad():
-                        target_log_prob_pot = self.inter_teachers_log_prob(treat_pot, noised_out_pot, cov_f_batch=cov_f_full).squeeze()
+                        target_log_prob_pot = \
+                            self.inter_teachers_log_prob(treat_pot, noised_out_pot, cov_f_batch=cov_f_full).squeeze()
                     if self.student_quadrature == 'rect':
                         cross_entropy = - (target_log_prob_pot.exp() * log_prob_pot).sum() * bin_size
                     elif self.student_quadrature == 'trap':
@@ -494,7 +496,8 @@ class AIPTWInterFlowTeacherStudent(PluginInterFlowTeacherStudent):
                     if self.student_quadrature == 'rect':
                         cond_cross_entropy = - (target_cond_log_prob_pot.exp() * log_prob_pot.unsqueeze(-1)).sum(0) * bin_size
                     elif self.student_quadrature == 'trap':
-                        cond_cross_entropy = - 0.5 * (target_cond_log_prob_pot.exp() * log_prob_pot.unsqueeze(-1)).unfold(0, 2, 1).sum(0).sum(1) * bin_size
+                        cond_cross_entropy = - 0.5 * (target_cond_log_prob_pot.exp() *
+                                                      log_prob_pot.unsqueeze(-1)).unfold(0, 2, 1).sum(0).sum(1) * bin_size
                     else:
                         raise NotImplementedError()
                 else:  # MC sampling for approximation of cross-entropy
@@ -503,8 +506,9 @@ class AIPTWInterFlowTeacherStudent(PluginInterFlowTeacherStudent):
                         out_cond_pot_sample = self.inter_teachers_sample(treat_pot, 1,
                                                                          cov_f_batch=cov_f_full,
                                                                          marginalize=False).squeeze()
-                        out_pot_sample = torch.gather(out_cond_pot_sample, 1,
-                                                      torch.randint(cov_f_full.shape[0], (self.student_nce_bins, 1, self.dim_out))).squeeze(1)
+                        out_pot_sample = \
+                            torch.gather(out_cond_pot_sample, 1,
+                                         torch.randint(cov_f_full.shape[0], (self.student_nce_bins, 1, self.dim_out))).squeeze(1)
 
                     cross_entropy = - self.flow_dist[i].log_prob(out_pot_sample).mean()
                     cond_cross_entropy = - self.flow_dist[i].log_prob(out_cond_pot_sample).mean(0)
@@ -513,8 +517,8 @@ class AIPTWInterFlowTeacherStudent(PluginInterFlowTeacherStudent):
 
                 prop = torch.sigmoid(prop_preds_full) if treat_option == 1.0 else 1.0 - torch.sigmoid(prop_preds_full)
 
-                bias_correction = ((((treat_f_full == treat_option) & (prop >= self.clip_prop)) / (prop + 1e-9)).squeeze()
-                                   * (- log_prob_f - cond_cross_entropy)).mean()
+                bias_correction = ((((treat_f_full == treat_option) & (prop >= self.clip_prop)) / (prop + 1e-9)).squeeze() *
+                                   (- log_prob_f - cond_cross_entropy)).mean()
                 loss = cross_entropy + bias_correction
 
                 loss.backward()
@@ -634,15 +638,18 @@ class AIPTWTruncatedSeries(PluginInterFlowMarginalizedTeacher):
                                                                             cov_f_batch=cov_f_full).squeeze()
 
                 betas_cond = (target_cond_log_prob_pot.exp().unsqueeze(-1) * b_y_pot.unsqueeze(1)).sum(0) * bin_size
-                betas_bias_corrected = ((treat_f_full == treat_option) & (prop >= self.clip_prop)) / (prop + 1e-9) * (b_y_f - betas_cond) + betas_cond
+                betas_bias_corrected = ((treat_f_full == treat_option) & (prop >= self.clip_prop)) /\
+                                       (prop + 1e-9) * (b_y_f - betas_cond) + betas_cond
                 self.betas[treat_option] = betas_bias_corrected.mean(0)
             elif self.dim_out == 2:
                 with torch.no_grad():
-                    out_cond_pot_sample = self.inter_teachers_sample(treat_pot, 1, cov_f_batch=cov_f_full, marginalize=False).squeeze()
+                    out_cond_pot_sample = \
+                        self.inter_teachers_sample(treat_pot, 1, cov_f_batch=cov_f_full, marginalize=False).squeeze()
 
                 b_y_cond = self.orth_basis(out_cond_pot_sample, cond_sample=True)
                 betas_cond = b_y_cond.mean(0)
-                betas_bias_corrected = (((treat_f_full == treat_option) & (prop >= self.clip_prop)) / (prop + 1e-9)).unsqueeze(-1) * (b_y_f - betas_cond) + betas_cond
+                betas_bias_corrected = (((treat_f_full == treat_option) & (prop >= self.clip_prop)) /
+                                        (prop + 1e-9)).unsqueeze(-1) * (b_y_f - betas_cond) + betas_cond
                 self.betas[treat_option] = betas_bias_corrected.mean(0)
             else:
                 raise NotImplementedError()  # Higher dimensions are computationally infeasible
@@ -670,13 +677,13 @@ class AIPTWTruncatedSeries(PluginInterFlowMarginalizedTeacher):
                         prob_pot = prob_pot / torch.prod(self.out_f.max(0)[0] - self.out_f.min(0)[0])
 
                     prob_pot = prob_pot / norm_const
-                    prob_pot[(prob_pot <= 0.0)] = 1e-10  # Zeroing negative values
-                    prob_pot[(out_pot < self.out_f.min(0)[0]).any(1) | (out_pot > self.out_f.max(0)[0]).any(1)] = 1e-10  # Zeroing values outside of support
+                    # Zeroing negative values
+                    prob_pot[(prob_pot <= 0.0)] = 1e-10
+                    # Zeroing values outside of support
+                    prob_pot[(out_pot < self.out_f.min(0)[0]).any(1) | (out_pot > self.out_f.max(0)[0]).any(1)] = 1e-10
                     log_prob_pot[treat_pot == treat_option] = prob_pot.log()
 
         return log_prob_pot
 
     def inter_log_prob(self, treat_pot, out_pot):
         return self.inter_student_log_prob(treat_pot, out_pot)
-
-

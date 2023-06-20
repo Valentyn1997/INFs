@@ -19,20 +19,21 @@ def plot_interventional_densities(data_dict, model, save_to_dir=False, out_scale
             ax[0].grid()
             ax[1].grid()
 
-
-            ax[0].hist(data_dict['out_pot_0'], alpha=0.4, density=True, bins=30, label='$\\mathbb{P}(Y[0] = y)$', color='tab:blue')
-            ax[1].hist(data_dict['out_pot_1'], alpha=0.4, density=True, bins=30, label='$\\mathbb{P}(Y[1] = y)$', color='tab:orange')
+            ax[0].hist(data_dict['out_pot_0'], alpha=0.4, density=True, bins=30, label='$\\mathbb{P}(Y[0] = y)$',
+                       color='tab:blue')
+            ax[1].hist(data_dict['out_pot_1'], alpha=0.4, density=True, bins=30, label='$\\mathbb{P}(Y[1] = y)$',
+                       color='tab:orange')
 
             sns.distplot(data_dict['out_f'][data_dict['treat_f'] == 0.0], hist=False,
                          label='$\\mathbb{P}(Y = y \\mid A = 0)$', ax=ax[0], color='tab:blue')
-            sns.distplot(data_dict['out_f'][data_dict['treat_f'] == 1.0], hist=False, label='$\\mathbb{P}(Y = y \\mid A = 1)$', ax=ax[1],
-                         color='tab:orange')
+            sns.distplot(data_dict['out_f'][data_dict['treat_f'] == 1.0], hist=False, label='$\\mathbb{P}(Y = y \\mid A = 1)$',
+                         ax=ax[1], color='tab:orange')
 
             x = np.linspace(data_dict['out_f'].min(), data_dict['out_f'].max(), 500)
-            ax[0].plot(x, np.exp(model.inter_log_prob(np.zeros((500,)), x)), label='$\\hat{\\mathbb{P}}^{\\mathrm{INFs}}(Y[0] = y)$',
-                       color='tab:blue')
-            ax[1].plot(x, np.exp(model.inter_log_prob(np.ones((500,)), x)), label='$\\hat{\\mathbb{P}}^{\\mathrm{INFs}}(Y[1] = y)$',
-                       color='tab:orange')
+            ax[0].plot(x, np.exp(model.inter_log_prob(np.zeros((500,)), x)),
+                       label='$\\hat{\\mathbb{P}}^{\\mathrm{INFs}}(Y[0] = y)$', color='tab:blue')
+            ax[1].plot(x, np.exp(model.inter_log_prob(np.ones((500,)), x)),
+                       label='$\\hat{\\mathbb{P}}^{\\mathrm{INFs}}(Y[1] = y)$', color='tab:orange')
 
             ax[0].lines[0].set_linestyle("--")
             ax[1].lines[0].set_linestyle("--")
@@ -95,6 +96,5 @@ def plot_interventional_densities(data_dict, model, save_to_dir=False, out_scale
         ax[1].contour(xx, yy, np.exp(model.inter_log_prob(np.ones((grid_size * grid_size,)), xy)).reshape(grid_size, grid_size))
         sns.kdeplot(pd.DataFrame(data_dict['out_pot_1']), x=0, y=1, label=1, color='tab:orange', ax=ax[1])
         ax[1].legend()
-
 
     plt.show()

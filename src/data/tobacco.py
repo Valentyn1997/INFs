@@ -19,9 +19,8 @@ class TobaccoControlProgram:
     def __init__(self, normalize_out=False, **kwargs):
         df_outcome_raw = pd.read_csv(f'{ROOT_PATH}/data/tobacco_control/prop99.csv')
         df_outcome_raw = df_outcome_raw[df_outcome_raw['SubMeasureDesc'] == 'Cigarette Consumption (Pack Sales Per Capita)']
-        self.df_outcome = pd.DataFrame(df_outcome_raw.pivot_table(values='Data_Value',
-                                                             index='LocationDesc',
-                                                             columns=['Year']).to_records())
+        self.df_outcome = pd.DataFrame(df_outcome_raw.pivot_table(values='Data_Value', index='LocationDesc',
+                                                                  columns=['Year']).to_records())
 
         rda_predictors = pyreadr.read_r(f'{ROOT_PATH}/data/tobacco_control/smoking.rda')
         self.df_predictors = pd.DataFrame(list(rda_predictors.values())[0])
@@ -32,22 +31,22 @@ class TobaccoControlProgram:
                       'Michigan', 'New Jersey', 'New York', 'Washington', 'District of Columbia']
 
         self.df_outcome.drop(self.df_outcome[self.df_outcome['LocationDesc'].isin(bad_states)].index, inplace=True)
-        ca_id = self.df_outcome[self.df_outcome['LocationDesc'] == 'California'].index.item()
+        # ca_id = self.df_outcome[self.df_outcome['LocationDesc'] == 'California'].index.item()
         self.df_outcome = self.df_outcome.reset_index()
         self.df_outcome = self.df_outcome.rename(columns={'index': 'org_index'})
-        logger.info(
-            f'After filtering out some states, we are left with {self.df_outcome.LocationDesc.unique().shape[0]} states (including California):')
+        logger.info(f'After filtering out some states, '
+                    f'we are left with {self.df_outcome.LocationDesc.unique().shape[0]} states (including California):')
 
         df_outcome_ca = self.df_outcome.loc[self.df_outcome['LocationDesc'] == 'California', :]
         df_outcome_control = self.df_outcome.loc[self.df_outcome['LocationDesc'] != 'California', :]
 
         ca_outcomes_pre = df_outcome_ca.loc[:, [str(i) for i in list(range(START_TIME, INTERVENTION_TIME))]].values.reshape(-1, 1)
-        control_outcomes_pre = df_outcome_control.loc[:,
-                               [str(i) for i in list(range(START_TIME, INTERVENTION_TIME))]].values.transpose()
+        control_outcomes_pre = \
+            df_outcome_control.loc[:, [str(i) for i in list(range(START_TIME, INTERVENTION_TIME))]].values.transpose()
 
         ca_outcomes_post = df_outcome_ca.loc[:, [str(i) for i in list(range(INTERVENTION_TIME, STOP_TIME))]].values.reshape(-1, 1)
-        control_outcomes_post = df_outcome_control.loc[:,
-                                [str(i) for i in list(range(INTERVENTION_TIME, STOP_TIME))]].values.transpose()
+        control_outcomes_post = \
+            df_outcome_control.loc[:, [str(i) for i in list(range(INTERVENTION_TIME, STOP_TIME))]].values.transpose()
 
         self.Z0 = control_outcomes_pre
         self.Z1 = ca_outcomes_pre

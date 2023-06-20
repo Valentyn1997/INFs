@@ -83,7 +83,6 @@ class AIPTWKernelEstimator(InterventionalDensityEstimator):
         bce_loss = torch.binary_cross_entropy_with_logits(prop_preds, treat_f)
         return mse_loss, bce_loss
 
-
     def fit_nuacance_models(self, cov_f, out_f, treat_f, log: bool):
         modules = torch.nn.ModuleList([self.repr_nn, self.regression_nn])
         optimizer = torch.optim.Adam(modules.parameters(), lr=self.lr)
@@ -120,7 +119,6 @@ class AIPTWKernelEstimator(InterventionalDensityEstimator):
                     return mu_pred.numpy()
 
                 return prop_preds.numpy(), normalized_rbf_pred
-
 
     # def clip_quantiles(self, prop_preds):
     #     return np.clip(prop_preds, np.nanquantile(prop_preds, self.clip_prop_quantile), 1.0)
@@ -159,7 +157,8 @@ class AIPTWKernelEstimator(InterventionalDensityEstimator):
 
         for treat_option, norm_const in zip(self.treat_options, self.norm_const):
             if not self.pure_functional:
-                mu_a = self.normalized_rbf_y[treat_option](self.out_pot_pred[treat_option], out_pot[treat_pot.reshape(-1) == treat_option])
+                mu_a = self.normalized_rbf_y[treat_option](self.out_pot_pred[treat_option],
+                                                           out_pot[treat_pot.reshape(-1) == treat_option])
                 mu_A = self.normalized_rbf_y[treat_option](self.out_f_pred, out_pot[treat_pot.reshape(-1) == treat_option])
             else:
                 mu_a = self.out_pot_pred[treat_option](out_pot[treat_pot.reshape(-1) == treat_option])
@@ -188,11 +187,3 @@ class AIPTWKernelEstimator(InterventionalDensityEstimator):
     def inter_mean(self, treat_option, **kwargs):
         logger.warning('Calculation of mean is not implemented for this method.')
         return 0.0
-
-
-
-
-
-
-
-

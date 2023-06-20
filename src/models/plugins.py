@@ -235,4 +235,3 @@ class PluginMixtureDensityMarginalizedTeacher(PluginMarginalizedTeacher):
     def _cond_dist(self, context):
         cat_dist, norm_comps = self.cond_mixture(context)
         return MixtureSameFamily(cat_dist._categorical, Independent(norm_comps, 0))
-

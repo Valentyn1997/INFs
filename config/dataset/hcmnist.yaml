@@ -1,8 +1,8 @@
 # @package _global_
 dataset:
-  _target_: src.data.HCMNIST
+  _target_: src.data.HCMNIST    # Will be dynamically instantiated
   name: hcmnist
-  normalize_out: True           # normilize outcome
+  normalize_out: True           # Normalize outcome
   seed: 10
 
 model:
