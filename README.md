@@ -1,4 +1,7 @@
 # INFs
+[![arXiv](https://img.shields.io/badge/arXiv-2209.06203-b31b1b.svg)](https://arxiv.org/abs/2209.06203)
+[![Python application](https://github.com/Valentyn1997/INFs/actions/workflows/python-app.yml/badge.svg)](https://github.com/Valentyn1997/INFs/actions/workflows/python-app.yml)
+
 Normalizing Flows for Interventional Density Estimation
 
 <img width="1335" alt="image" src="https://github.com/Valentyn1997/INFs/assets/23198776/a3557641-9ac4-48de-b596-4c6679e56fc2">
