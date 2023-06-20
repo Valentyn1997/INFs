@@ -10,7 +10,7 @@ python-dotenv>=0.5.1
 numpy
 pandas
 pyro-ppl
-sklearn
+scikit-learn
 torch
 matplotlib
 hydra-core
