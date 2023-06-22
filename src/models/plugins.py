@@ -6,9 +6,9 @@ from pyro.nn import DenseNN
 from tqdm import tqdm
 from sklearn.preprocessing import StandardScaler
 from torch.utils.data import TensorDataset, DataLoader
-
+from typing import Tuple
+import numpy as np
 from torch.distributions import Normal, OneHotCategorical, MixtureSameFamily, Independent, MultivariateNormal
-
 
 from src.models import InterventionalDensityEstimator
 
@@ -38,28 +38,51 @@ class PluginInterventionalDensityEstimator(InterventionalDensityEstimator):
         self.repr_nn = DenseNN(self.dim_cov, [self.dim_hid], param_dims=[self.dim_hid]).float()
         self.cond_dist_nn = None
 
-    def _cond_log_prob(self, context, out):
+    def _cond_log_prob(self, context, out) -> torch.Tensor:
+        """
+        Internal method for the conditional log-probability
+        @param context: Tensor of the context
+        @param out: Outcome tensor
+        @return: Tensor with conditional log-probabilities
+        """
         raise NotImplementedError()
 
-    def _cond_dist(self, context):
+    def _cond_dist(self, context) -> torch.distributions.Distribution:
+        """
+        Internal method for the conditional distribution
+        @param context: Tensor of the context
+        @return: torch.distributions.Distribution
+        """
         raise NotImplementedError()
 
-    def get_train_dataloader(self, cov_f, treat_f, out_f):
+    def get_train_dataloader(self, cov_f, treat_f, out_f) -> DataLoader:
         training_data = TensorDataset(cov_f, treat_f, out_f)
         train_dataloader = DataLoader(training_data, batch_size=self.batch_size, shuffle=True)
         return train_dataloader
 
-    def prepare_train_data(self, train_data_dict: dict):
+    def prepare_train_data(self, train_data_dict: dict) -> Tuple[torch.Tensor]:
+        """
+        Data pre-processing
+        :param train_data_dict: Dictionary with the training data
+        """
         cov_f, treat_f, out_f = self.prepare_tensors(train_data_dict['cov_f'], train_data_dict['treat_f'],
                                                      train_data_dict['out_f'], kind='torch')
         self.hparams.dataset.n_samples_train = cov_f.shape[0]
         return cov_f, treat_f, out_f
 
-    def get_nuisance_optimizer(self):
+    def get_nuisance_optimizer(self) -> torch.optim.Optimizer:
+        """
+        Init optimizer for the nuisance flow
+        """
         modules = torch.nn.ModuleList([self.repr_nn, self.cond_dist_nn])
         return torch.optim.SGD(list(modules.parameters()), lr=self.nuisance_lr, momentum=0.9)
 
     def fit(self, train_data_dict: dict, log: bool):
+        """
+        Fitting the estimator
+        @param train_data_dict: Training data dictionary
+        @param log: Logging to the MlFlow
+        """
         # Preparing data
         cov_f, treat_f, out_f = self.prepare_train_data(train_data_dict)
         cov_f = torch.tensor(self.cov_scaler.fit_transform(cov_f)).float()
@@ -94,19 +117,31 @@ class PluginInterventionalDensityEstimator(InterventionalDensityEstimator):
             if step % 50 == 0 and log:
                 self.mlflow_logger.log_metrics({'train_cond_neg_log_prob': loss.item()}, step=step)
 
-    def inter_log_prob(self, treat_pot, out_pot):
+    def inter_log_prob(self, treat_pot, out_pot) -> torch.Tensor:
+        """
+        Interventional log-probability for large datasets
+        @param treat_pot: Tensor of potential treatments
+        @param out_pot: Tensor of potential outcome values
+        @return: Tensor with log-probabilities
+        """
         if out_pot.shape[0] > 25000 or self.cov_f.shape[0] > 25000:
             log_prob_pot = torch.zeros((out_pot.shape[0], 1))
             batch_size = 1000
             for i in range((out_pot.shape[0] - 1) // batch_size + 1):
                 log_prob_pot[i * batch_size: (i + 1) * batch_size] = \
                     self.inter_nuisances_log_prob(treat_pot[i * batch_size: (i + 1) * batch_size],
-                                                 out_pot[i * batch_size: (i + 1) * batch_size])
+                                                  out_pot[i * batch_size: (i + 1) * batch_size])
             return log_prob_pot
         else:
             return self.inter_nuisances_log_prob(treat_pot, out_pot)
 
-    def inter_nuisances_log_prob(self, treat_pot, out_pot):
+    def inter_nuisances_log_prob(self, treat_pot, out_pot) -> torch.Tensor:
+        """
+        Interventional log-probability
+        @param treat_pot: Tensor of potential treatments
+        @param out_pot: Tensor of potential outcome values
+        @return: Tensor with log-probabilities
+        """
         assert treat_pot.shape[0] == out_pot.shape[0]
         n = out_pot.shape[0]
         _, treat_pot, out_pot = self.prepare_tensors(None, treat_pot, out_pot, kind='torch')
@@ -126,7 +161,13 @@ class PluginInterventionalDensityEstimator(InterventionalDensityEstimator):
 
         return log_prob_pot
 
-    def inter_sample(self, treat_pot, n_samples):
+    def inter_sample(self, treat_pot, n_samples) -> torch.Tensor:
+        """
+        Sampling from the estimated interventional density
+        @param treat_pot: Tensor of potential treatments
+        @param n_samples: number of samples
+        @return: Tensor with sampled data
+        """
         n, cov_n = treat_pot.shape[0], self.cov_f.shape[0]
         _, treat_pot, _ = self.prepare_tensors(None, treat_pot, None, kind='torch')
         cov_f = self.cov_f.repeat(n, 1, 1)
@@ -143,7 +184,14 @@ class PluginInterventionalDensityEstimator(InterventionalDensityEstimator):
 
         return sampled_out_pot
 
-    def cond_log_prob(self, treat_f, out_f, cov_f):
+    def cond_log_prob(self, treat_f, out_f, cov_f) -> torch.Tensor:
+        """
+        Conditional log-probability
+        @param treat_f: Tensor with factual treatments
+        @param out_f: Tensor with factual outcomes
+        @param cov_f: Tensor with factual covariates
+        @return: Tensor with log-probabilities
+        """
         # Preparing data
         cov_f, treat_f, out_f = self.prepare_tensors(cov_f, treat_f, out_f, kind='torch')
         cov_f = torch.tensor(self.cov_scaler.transform(cov_f)).float()
@@ -154,7 +202,12 @@ class PluginInterventionalDensityEstimator(InterventionalDensityEstimator):
             log_prob = self._cond_log_prob(context, out_f)
         return log_prob
 
-    def inter_mean(self, treat_option, **kwargs):
+    def inter_mean(self, treat_option, **kwargs) -> np.array:
+        """
+        Mean of potential outcomes
+        @param treat_option: Treatment 0 / 1
+        @return: mean
+        """
         treat_pot = treat_option * torch.ones((self.cov_f.shape[0], 1)).type_as(self.cov_f)
 
         with torch.no_grad():
@@ -175,25 +228,33 @@ class PluginGaussianTARNet(PluginInterventionalDensityEstimator):
                                     param_dims=[self.dim_out]).float()
         self.log_std = torch.nn.Parameter(torch.zeros((self.dim_out, )))
 
-    def get_nuisance_optimizer(self):
+    def get_nuisance_optimizer(self) -> torch.optim.Optimizer:
+        """
+        Init optimizer for the nuisance flow
+        """
         modules = torch.nn.ModuleList([self.repr_nn, self.cond_dist_nn])
         return torch.optim.SGD(list(modules.parameters()) + [self.log_std], lr=self.nuisance_lr, momentum=0.9)
 
     @staticmethod
-    def set_hparams(model_args: DictConfig, new_model_args: dict):
+    def set_hparams(model_args: DictConfig, new_model_args: dict) -> None:
+        """
+        Set hyperparameters during tuning
+        @param model_args: Default hparameters
+        @param new_model_args: Hparameters for tuning
+        """
         model_args.noise_std_X = new_model_args['noise_std_X']
         model_args.noise_std_Y = new_model_args['noise_std_Y']
         model_args.nuisance_lr = new_model_args['nuisance_lr']
         model_args.batch_size = new_model_args['batch_size']
 
-    def _cond_dist(self, context):
+    def _cond_dist(self, context) -> torch.distributions.Distribution:
         mu = self.cond_dist_nn(context)
         if self.dim_out == 1:
             return Normal(mu, self.log_std.exp())
         else:
             return MultivariateNormal(mu, torch.diag(self.log_std.exp()))
 
-    def _cond_log_prob(self, context, out):
+    def _cond_log_prob(self, context, out) -> torch.Tensor:
         cond_normal = self._cond_dist(context)
         return cond_normal.log_prob(out).squeeze()
 
@@ -207,21 +268,29 @@ class PluginMDN(PluginInterventionalDensityEstimator):
 
         # Model hyparams & Train params
         self.nuisance_num_comp = args.model.nuisance_num_comp
-
         self.cond_dist_nn = DenseNN(self.dim_hid + self.dim_treat, [self.dim_hid],
-                                    param_dims=[self.dim_out * self.nuisance_num_comp,
-                                                self.dim_out * self.nuisance_num_comp,
+                                    param_dims=[self.dim_out * self.nuisance_num_comp, self.dim_out * self.nuisance_num_comp,
                                                 self.nuisance_num_comp]).float()
 
     @staticmethod
-    def set_hparams(model_args: DictConfig, new_model_args: dict):
+    def set_hparams(model_args: DictConfig, new_model_args: dict) -> None:
+        """
+        Set hyperparameters during tuning
+        @param model_args: Default hparameters
+        @param new_model_args: Hparameters for tuning
+        """
         model_args.nuisance_num_comp = new_model_args['nuisance_num_comp']
         model_args.noise_std_X = new_model_args['noise_std_X']
         model_args.noise_std_Y = new_model_args['noise_std_Y']
         model_args.nuisance_lr = new_model_args['nuisance_lr']
         model_args.batch_size = new_model_args['batch_size']
 
-    def cond_mixture(self, context):
+    def cond_mixture(self, context) -> Tuple[torch.distributions.Distribution]:
+        """
+        Conditional mixture components
+        @param context: Tensor of the context
+        @return: cat_dist, norm_comps
+        """
         mu, log_std, logits = self.cond_dist_nn(context)
         cat_dist = OneHotCategorical(logits=logits)
         std = torch.exp(log_std).reshape(*log_std.shape[:-1], self.nuisance_num_comp, self.dim_out)
@@ -229,10 +298,10 @@ class PluginMDN(PluginInterventionalDensityEstimator):
         norm_comps = MultivariateNormal(mu, torch.diag_embed(std))
         return cat_dist, norm_comps
 
-    def _cond_log_prob(self, context, out):
+    def _cond_log_prob(self, context, out) -> torch.Tensor:
         cat_dist, norm_comps = self.cond_mixture(context)
         return torch.logsumexp(cat_dist.probs.log() + norm_comps.log_prob(out.unsqueeze(-2)), dim=-1)
 
-    def _cond_dist(self, context):
+    def _cond_dist(self, context) -> torch.distributions.Distribution:
         cat_dist, norm_comps = self.cond_mixture(context)
         return MixtureSameFamily(cat_dist._categorical, Independent(norm_comps, 0))

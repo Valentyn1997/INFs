@@ -26,6 +26,12 @@ class Affine(TransformModule):
 
 
 def subset_by_indices(data_dict: dict, indices: list):
+    """
+    Subset of the data dictionary
+    @param data_dict: data dictionary
+    @param indices: indices for a subset
+    @return: new data dictionary
+    """
     subset_data_dict = {}
     for (k, v) in data_dict.items():
         subset_data_dict[k] = np.copy(data_dict[k][indices])
@@ -33,6 +39,9 @@ def subset_by_indices(data_dict: dict, indices: list):
 
 
 class NormalizedRBF:
+    """
+    Normalized radial basis function, used for KDE and DKME
+    """
     def __init__(self, sd):
         self.sd = sd
         self.rbf = RBF(np.sqrt(self.sd / 2))

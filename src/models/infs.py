@@ -11,6 +11,7 @@ from tqdm import tqdm
 from sklearn.preprocessing import StandardScaler
 from torch.utils.data import TensorDataset, DataLoader
 from torch_ema import ExponentialMovingAverage
+from typing import Tuple
 
 from src.models import InterventionalDensityEstimator
 
@@ -75,37 +76,57 @@ class PluginINFs(InterventionalDensityEstimator):
         self.cond_flow_dist = dist.ConditionalTransformedDistribution(self.cond_base_dist,
                                                                       [self.cond_affine_transform, self.cond_spline_transform])
 
-    def get_train_dataloader(self, cov_f, treat_f, out_f, batch_size):
+    def get_train_dataloader(self, cov_f, treat_f, out_f, batch_size) -> DataLoader:
         training_data = TensorDataset(cov_f, treat_f, out_f)
         train_dataloader = DataLoader(training_data, batch_size=batch_size, shuffle=True)
         return train_dataloader
 
-    def get_nuisance_optimizer(self):
+    def get_nuisance_optimizer(self) -> torch.optim.Optimizer:
+        """
+        Init optimizer for the nuisance flow
+        """
         modules = torch.nn.ModuleList([self.repr_nn, self.cond_spline_transform])
         return torch.optim.SGD(list(modules.parameters()) + [self.cond_loc, self.cond_scale], lr=self.nuisance_lr, momentum=0.9)
 
     @staticmethod
-    def set_hparams(model_args: DictConfig, new_model_args: dict):
+    def set_hparams(model_args: DictConfig, new_model_args: dict) -> None:
+        """
+        Set hyperparameters during tuning
+        @param model_args: Default hparameters
+        @param new_model_args: Hparameters for tuning
+        """
         model_args.nuisance_count_bins = new_model_args['nuisance_count_bins']
         model_args.noise_std_X = new_model_args['noise_std_X']
         model_args.noise_std_Y = new_model_args['noise_std_Y']
         model_args.nuisance_lr = new_model_args['nuisance_lr']
         model_args.batch_size = new_model_args['batch_size']
 
-    def prepare_train_data(self, train_data_dict: dict):
+    def prepare_train_data(self, train_data_dict: dict) -> Tuple[torch.Tensor]:
+        """
+        Data pre-processing
+        :param train_data_dict: Dictionary with the training data
+        """
         cov_f, treat_f, out_f = self.prepare_tensors(train_data_dict['cov_f'], train_data_dict['treat_f'],
                                                      train_data_dict['out_f'], kind='torch')
         self.hparams.dataset.n_samples_train = cov_f.shape[0]
         return cov_f, treat_f, out_f
 
-    def _get_out_pot_grid(self):
+    def _get_out_pot_grid(self) -> torch.Tensor:
+        """
+        @return: Grid with potential outcome values and the bin size
+        """
         out_f_min, out_f_max = self.out_f.min(), self.out_f.max()
         out_pot = torch.linspace(out_f_min, out_f_max, self.target_nce_bins).reshape(-1, self.dim_out)
         noised_out_pot = out_pot + self.noise_ce * torch.randn_like(out_pot)
         bin_size = (out_f_max - out_f_min) / self.target_nce_bins
         return noised_out_pot, bin_size
 
-    def fit(self, train_data_dict: dict, log: bool):
+    def fit(self, train_data_dict: dict, log: bool) -> None:
+        """
+        Fitting the estimator
+        @param train_data_dict: Training data dictionary
+        @param log: Logging to the MlFlow
+        """
         # Preparing data
         cov_f, treat_f, out_f = self.prepare_train_data(train_data_dict)
         cov_f = torch.tensor(self.cov_scaler.fit_transform(cov_f)).float()
@@ -143,7 +164,14 @@ class PluginINFs(InterventionalDensityEstimator):
             if step % 50 == 0 and log:
                 self.mlflow_logger.log_metrics({'train_cond_neg_log_prob': loss.item()}, step=step)
 
-    def cond_log_prob(self, treat_f, out_f, cov_f):
+    def cond_log_prob(self, treat_f, out_f, cov_f) -> torch.Tensor:
+        """
+        Conditional log-probability
+        @param treat_f: Tensor with factual treatments
+        @param out_f: Tensor with factual outcomes
+        @param cov_f: Tensor with factual covariates
+        @return: Tensor with log-probabilities
+        """
         # Preparing data
         cov_f, treat_f, out_f = self.prepare_tensors(cov_f, treat_f, out_f, kind='torch')
         cov_f = torch.tensor(self.cov_scaler.transform(cov_f)).float()
@@ -154,19 +182,34 @@ class PluginINFs(InterventionalDensityEstimator):
             log_prob = self.cond_flow_dist.condition(context).log_prob(out_f)
         return log_prob
 
-    def inter_log_prob(self, treat_pot, out_pot):
+    def inter_log_prob(self, treat_pot, out_pot) -> torch.Tensor:
+        """
+        Interventional log-probability for large datasets
+        @param treat_pot: Tensor of potential treatments
+        @param out_pot: Tensor of potential outcome values
+        @return: Tensor with log-probabilities
+        """
         if out_pot.shape[0] > 25000 or self.cov_f.shape[0] > 25000:
             log_prob_pot = torch.zeros((out_pot.shape[0], 1))
             batch_size = 100
             for i in range(out_pot.shape[0] // batch_size + 1):
                 log_prob_pot[i * batch_size: (i + 1) * batch_size] = \
                     self.inter_nuisances_log_prob(treat_pot[i * batch_size: (i + 1) * batch_size],
-                                                 out_pot[i * batch_size: (i + 1) * batch_size])
+                                                  out_pot[i * batch_size: (i + 1) * batch_size])
             return log_prob_pot
         else:
             return self.inter_nuisances_log_prob(treat_pot, out_pot)
 
-    def inter_nuisances_log_prob(self, treat_pot, out_pot, marginalize=True, with_grad=False, cov_f_batch=None):
+    def inter_nuisances_log_prob(self, treat_pot, out_pot, marginalize=True, with_grad=False, cov_f_batch=None) -> torch.Tensor:
+        """
+        Interventional log-probability
+        @param cov_f_batch: Sample average over a certain batch of covariates
+        @param with_grad: Enable gradient computation
+        @param marginalize: Sample average over covariates
+        @param treat_pot: Tensor of potential treatments
+        @param out_pot: Tensor of potential outcome values
+        @return: Tensor with log-probabilities
+        """
         assert treat_pot.shape[0] == out_pot.shape[0]
         n = out_pot.shape[0]
         _, treat_pot, out_pot = self.prepare_tensors(None, treat_pot, out_pot, kind='torch')
@@ -187,10 +230,24 @@ class PluginINFs(InterventionalDensityEstimator):
 
         return log_prob_pot
 
-    def inter_sample(self, treat_pot, n_samples):
+    def inter_sample(self, treat_pot, n_samples) -> torch.Tensor:
+        """
+        Sampling from the estimated interventional density
+        @param treat_pot: Tensor of potential treatments
+        @param n_samples: number of samples
+        @return: Tensor with sampled data
+        """
         return self.inter_nuisances_sample(treat_pot, n_samples)
 
-    def inter_nuisances_sample(self, treat_pot, n_samples, cov_f_batch=None, marginalize=True):
+    def inter_nuisances_sample(self, treat_pot, n_samples, cov_f_batch=None, marginalize=True) -> torch.Tensor:
+        """
+        Sampling from the estimated interventional density
+        @param marginalize: Sample average over covariates
+        @param cov_f_batch: Sample average over a certain batch of covariates
+        @param treat_pot: Tensor of potential treatments
+        @param n_samples: number of samples
+        @return: Tensor with sampled data
+        """
         n = treat_pot.shape[0]
         _, treat_pot, _ = self.prepare_tensors(None, treat_pot, None, kind='torch')
         cov_f = self.cov_f.repeat(n, 1, 1) if cov_f_batch is None else cov_f_batch.repeat(n, 1, 1)
@@ -207,7 +264,12 @@ class PluginINFs(InterventionalDensityEstimator):
             else:
                 return sampled_out_cond
 
-    def inter_mean(self, treat_option, **kwargs):
+    def inter_mean(self, treat_option, **kwargs) -> np.array:
+        """
+        Mean of potential outcomes
+        @param treat_option: Treatment 0 / 1
+        @return: mean
+        """
         treat_pot = treat_option * torch.ones((self.n_mc, ))
         return self.inter_sample(treat_pot, 1).mean((0, 1)).numpy()
 
@@ -264,10 +326,18 @@ class CovariateAdjustedINFs(PluginINFs):
                           zip(self.base_dist, self.affine_transform, self.spline_transform)]
 
     @staticmethod
-    def set_hparams(model_args: DictConfig, new_model_args: dict):
+    def set_hparams(model_args: DictConfig, new_model_args: dict) -> None:
+        """
+        Set hyperparameters during tuning
+        @param model_args: Default hparameters
+        @param new_model_args: Hparameters for tuning
+        """
         model_args.target_count_bins = new_model_args['target_count_bins']
 
-    def get_target_optimizers(self):
+    def get_target_optimizers(self) -> torch.optim.Optimizer:
+        """
+        Init optimizer for the target flow
+        """
         if self.dim_out == 1:
             modules = [torch.nn.ModuleList([spline_transform]) for spline_transform in self.spline_transform]
         else:
@@ -277,7 +347,14 @@ class CovariateAdjustedINFs(PluginINFs):
         ema_target = ExponentialMovingAverage([p for par in parameters for p in par], decay=self.target_ema)
         return optimizers, ema_target
 
-    def cross_entropy(self, flow_dist, treat_option, cov_f):
+    def cross_entropy(self, flow_dist, treat_option, cov_f) -> torch.Tensor:
+        """
+        Cross-entropy for the second stage training
+        @param flow_dist: Target flow for treatment 0 / 1
+        @param treat_option: treatment 0 / 1
+        @param cov_f: Batch of factual covariates
+        @return: cross-entropy
+        """
         treat_pot = treat_option * torch.ones((self.target_nce_bins,))
         if self.dim_out == 1:  # Grid based approximation of cross-entropy
             out_pot = torch.linspace(self.out_f.min(), self.out_f.max(), self.target_nce_bins).reshape(-1, self.dim_out)
@@ -297,7 +374,12 @@ class CovariateAdjustedINFs(PluginINFs):
                 out_pot_sample = self.inter_nuisances_sample(treat_pot, 1, cov_f_batch=cov_f)
             return - flow_dist.log_prob(out_pot_sample).squeeze().mean()
 
-    def fit(self, train_data_dict: dict, log: bool):
+    def fit(self, train_data_dict: dict, log: bool) -> None:
+        """
+        Fitting the estimator
+        @param train_data_dict: Training data dictionary
+        @param log: Logging to the MlFlow
+        """
         # Preparing data
         cov_f_full, treat_f_full, out_f_full = self.prepare_train_data(train_data_dict)
         cov_f_full = torch.tensor(self.cov_scaler.fit_transform(cov_f_full)).float()
@@ -369,7 +451,14 @@ class CovariateAdjustedINFs(PluginINFs):
     #                 neg_cross_entropy += - self.cross_entropy(self.flow_dist[i], treat_option, cov_f)
     #     return neg_cross_entropy
 
-    def inter_target_log_prob(self, treat_pot, out_pot, with_grad=False):
+    def inter_target_log_prob(self, treat_pot, out_pot, with_grad=False) -> torch.Tensor:
+        """
+        Interventional log-probability
+        @param with_grad: Enable gradient computation\
+        @param treat_pot: Tensor of potential treatments
+        @param out_pot: Tensor of potential outcome values
+        @return: Tensor with log-probabilities
+        """
         assert treat_pot.shape[0] == out_pot.shape[0]
 
         _, treat_pot, out_pot = self.prepare_tensors(None, treat_pot, out_pot, kind='torch')
@@ -387,10 +476,22 @@ class CovariateAdjustedINFs(PluginINFs):
 
         return log_prob_pot
 
-    def inter_log_prob(self, treat_pot, out_pot):
+    def inter_log_prob(self, treat_pot, out_pot) -> torch.Tensor:
+        """
+        Interventional log-probability for large datasets
+        @param treat_pot: Tensor of potential treatments
+        @param out_pot: Tensor of potential outcome values
+        @return: Tensor with log-probabilities
+        """
         return self.inter_target_log_prob(treat_pot, out_pot)
 
-    def inter_sample(self, treat_pot, n_samples):
+    def inter_sample(self, treat_pot, n_samples) -> torch.Tensor:
+        """
+        Sampling from the estimated interventional density
+        @param treat_pot: Tensor of potential treatments
+        @param n_samples: number of samples
+        @return: Tensor with sampled data
+        """
         _, treat_pot, _ = self.prepare_tensors(None, treat_pot, None, kind='torch')
         sampled_out_pot = np.zeros((n_samples, treat_pot.shape[0], self.dim_out))
 
@@ -402,7 +503,12 @@ class CovariateAdjustedINFs(PluginINFs):
                             self.flow_dist[i].sample((n_samples, len(treat_pot == treat_option)))
         return sampled_out_pot
 
-    def inter_mean(self, treat_option, **kwargs):
+    def inter_mean(self, treat_option, **kwargs) -> torch.Tensor:
+        """
+        Mean of potential outcomes
+        @param treat_option: Treatment 0 / 1
+        @return: mean
+        """
         treat_pot = treat_option * np.ones((self.n_mc, ))
         return self.inter_sample(treat_pot, 1).mean((0, 1))
 
@@ -426,7 +532,12 @@ class AIPTWINFs(CovariateAdjustedINFs):
         # Model parameters
         self.repr_nn = DenseNN(self.dim_cov, [self.dim_hid], param_dims=[self.dim_hid, self.dim_treat]).float()
 
-    def fit(self, train_data_dict: dict, log: bool):
+    def fit(self, train_data_dict: dict, log: bool) -> None:
+        """
+        Fitting the estimator
+        @param train_data_dict: Training data dictionary
+        @param log: Logging to the MlFlow
+        """
         # Preparing data
         cov_f_full, treat_f_full, out_f_full = self.prepare_train_data(train_data_dict)
         cov_f_full = torch.tensor(self.cov_scaler.fit_transform(cov_f_full)).float()
@@ -498,7 +609,7 @@ class AIPTWINFs(CovariateAdjustedINFs):
 
                     with torch.no_grad():
                         target_cond_log_prob_pot = self.inter_nuisances_log_prob(treat_pot, noised_out_pot, marginalize=False,
-                                                                                cov_f_batch=cov_f_full).squeeze()
+                                                                                 cov_f_batch=cov_f_full).squeeze()
                     if self.target_quadrature == 'rect':
                         cond_cross_entropy = - (target_cond_log_prob_pot.exp() * log_prob_pot.unsqueeze(-1)).sum(0) * bin_size
                     elif self.target_quadrature == 'trap':
@@ -509,9 +620,8 @@ class AIPTWINFs(CovariateAdjustedINFs):
                 else:  # MC sampling for approximation of cross-entropy
                     with torch.no_grad():
                         # out_pot_sample = self.inter_nuisances_sample(treat_pot, 1, cov_f_batch=cov_f_full).squeeze()
-                        out_cond_pot_sample = self.inter_nuisances_sample(treat_pot, 1,
-                                                                         cov_f_batch=cov_f_full,
-                                                                         marginalize=False).squeeze()
+                        out_cond_pot_sample = self.inter_nuisances_sample(treat_pot, 1, cov_f_batch=cov_f_full,
+                                                                          marginalize=False).squeeze()
                         out_pot_sample = \
                             torch.gather(out_cond_pot_sample, 1,
                                          torch.randint(cov_f_full.shape[0], (self.target_nce_bins, 1, self.dim_out))).squeeze(1)
@@ -569,7 +679,13 @@ class AIPTWCNFTruncatedSeries(PluginINFs):
         self.betas = {}
         self.norm_const = np.array([1.0, 1.0])  # Will be updated after fit
 
-    def orth_basis(self, out, cond_sample=False):
+    def orth_basis(self, out, cond_sample=False) -> torch.Tensor:
+        """
+        Orthogonal basis functions
+        @param out: Outcome points to evaluate the orthogonal basis functions
+        @param cond_sample: Flag whether out is a sample from the conditional ditribution, i.e., it has one extra dimension
+        @return: Orthogonal basis functions evaluated at out
+        """
         out_scaled = (out - self.out_f.min(0)[0]) / (self.out_f.max(0)[0] - self.out_f.min(0)[0])
         if self.dim_out == 1:
             j = torch.tensor(range(1, self.target_n_basis + 1), dtype=float).reshape(1, -1)
@@ -589,7 +705,12 @@ class AIPTWCNFTruncatedSeries(PluginINFs):
         else:
             raise NotImplementedError()
 
-    def fit(self, train_data_dict: dict, log: bool):
+    def fit(self, train_data_dict: dict, log: bool) -> None:
+        """
+        Fitting the estimator
+        @param train_data_dict: Training data dictionary
+        @param log: Logging to the MlFlow
+        """
         # Preparing data
         cov_f_full, treat_f_full, out_f_full = self.prepare_train_data(train_data_dict)
         cov_f_full = torch.tensor(self.cov_scaler.fit_transform(cov_f_full)).float()
@@ -646,7 +767,7 @@ class AIPTWCNFTruncatedSeries(PluginINFs):
 
                 with torch.no_grad():
                     target_cond_log_prob_pot = self.inter_nuisances_log_prob(treat_pot, noised_out_pot, marginalize=False,
-                                                                            cov_f_batch=cov_f_full).squeeze()
+                                                                             cov_f_batch=cov_f_full).squeeze()
 
                 betas_cond = (target_cond_log_prob_pot.exp().unsqueeze(-1) * b_y_pot.unsqueeze(1)).sum(0) * bin_size
                 betas_bias_corrected = ((treat_f_full == treat_option) & (prop >= self.clip_prop)) /\
@@ -667,7 +788,14 @@ class AIPTWCNFTruncatedSeries(PluginINFs):
 
         self.set_norm_consts()
 
-    def inter_target_log_prob(self, treat_pot, out_pot, with_grad=False):
+    def inter_target_log_prob(self, treat_pot, out_pot, with_grad=False) -> torch.Tensor:
+        """
+        Interventional log-probability
+        @param with_grad: Enable gradient computation\
+        @param treat_pot: Tensor of potential treatments
+        @param out_pot: Tensor of potential outcome values
+        @return: Tensor with log-probabilities
+        """
         assert treat_pot.shape[0] == out_pot.shape[0]
 
         _, treat_pot, out_pot = self.prepare_tensors(None, treat_pot, out_pot, kind='torch')
@@ -696,5 +824,11 @@ class AIPTWCNFTruncatedSeries(PluginINFs):
 
         return log_prob_pot
 
-    def inter_log_prob(self, treat_pot, out_pot):
+    def inter_log_prob(self, treat_pot, out_pot) -> torch.Tensor:
+        """
+        Interventional log-probability for large datasets
+        @param treat_pot: Tensor of potential treatments
+        @param out_pot: Tensor of potential outcome values
+        @return: Tensor with log-probabilities
+        """
         return self.inter_target_log_prob(treat_pot, out_pot)

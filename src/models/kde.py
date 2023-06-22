@@ -8,6 +8,7 @@ from torch.utils.data import TensorDataset, DataLoader
 from src.models import InterventionalDensityEstimator
 from omegaconf import DictConfig
 from scipy.special import expit
+from typing import Tuple
 
 from src.models.utils import NormalizedRBF
 
@@ -52,22 +53,38 @@ class AIPTWKDE(InterventionalDensityEstimator):
                                          param_dims=[self.dim_out]).float()
 
     @staticmethod
-    def set_hparams(model_args: DictConfig, new_model_args: dict):
+    def set_hparams(model_args: DictConfig, new_model_args: dict) -> None:
+        """
+        Set hyperparameters during tuning
+        @param model_args: Default hparameters
+        @param new_model_args: Hparameters for tuning
+        """
         model_args.lr = new_model_args['lr']
         model_args.batch_size = new_model_args['batch_size']
 
-    def prepare_train_data(self, train_data_dict: dict):
+    def prepare_train_data(self, train_data_dict: dict) -> Tuple[torch.Tensor]:
+        """
+        Data pre-processing
+        :param train_data_dict: Dictionary with the training data
+        """
         cov_f, treat_f, out_f = self.prepare_tensors(train_data_dict['cov_f'], train_data_dict['treat_f'],
                                                      train_data_dict['out_f'], kind='torch')
         self.hparams.dataset.n_samples_train = cov_f.shape[0]
         return cov_f, treat_f, out_f
 
-    def get_train_dataloader(self, cov_f, treat_f, out_f):
+    def get_train_dataloader(self, cov_f, treat_f, out_f) -> DataLoader:
         training_data = TensorDataset(cov_f, treat_f, out_f)
         train_dataloader = DataLoader(training_data, batch_size=self.batch_size, shuffle=True)
         return train_dataloader
 
-    def forward_nuance(self, cov_f, out_f, treat_f):
+    def forward_nuance(self, cov_f, out_f, treat_f) -> Tuple[torch.Tensor]:
+        """
+        Forward pass for the nuance network
+        @param cov_f: Tensor with factual covariates
+        @param out_f: Tensor with factual outcomes
+        @param treat_f: Tensor with factual treatments
+        @return: Tensors with mse_loss, bce_loss
+        """
         repr_f, prop_preds = self.repr_nn(cov_f)
         if not self.pure_functional:
             repr_treat_f = torch.cat([repr_f, treat_f], dim=1)
@@ -88,7 +105,14 @@ class AIPTWKDE(InterventionalDensityEstimator):
         bce_loss = torch.binary_cross_entropy_with_logits(prop_preds, treat_f)
         return mse_loss, bce_loss
 
-    def fit_nuacance_models(self, cov_f, out_f, treat_f, log: bool):
+    def fit_nuacance_models(self, cov_f, out_f, treat_f, log: bool) -> None:
+        """
+        Fitting the nuisance network of the estimator
+        @param cov_f: Tensor with factual covariates
+        @param out_f: Tensor with factual outcomes
+        @param treat_f: Tensor with factual treatments
+        @param log: Logging to the MlFlow
+        """
         modules = torch.nn.ModuleList([self.repr_nn, self.regression_nn])
         optimizer = torch.optim.Adam(modules.parameters(), lr=self.lr)
         train_dataloader = self.get_train_dataloader(cov_f, treat_f, out_f)
@@ -104,7 +128,13 @@ class AIPTWKDE(InterventionalDensityEstimator):
             if step % 50 == 0 and log:
                 self.mlflow_logger.log_metrics({'train_mse_loss': mse_loss.mean(), 'train_bce_loss': bce_loss.mean()}, step=step)
 
-    def get_nuacance_predictions(self, cov, treat):
+    def get_nuacance_predictions(self, cov, treat) -> np.array:
+        """
+        Get prediction of the nuisance network
+        @param cov: Tensor of covariates
+        @param treat: Tensor of treatments
+        @return: Tensor of the predicted outcomes
+        """
         with torch.no_grad():
             repr, prop_preds = self.repr_nn(cov)
             if not self.pure_functional:
@@ -128,7 +158,12 @@ class AIPTWKDE(InterventionalDensityEstimator):
     # def clip_quantiles(self, prop_preds):
     #     return np.clip(prop_preds, np.nanquantile(prop_preds, self.clip_prop_quantile), 1.0)
 
-    def fit(self, train_data_dict: dict, log: bool):
+    def fit(self, train_data_dict: dict, log: bool) -> None:
+        """
+        Fitting the estimator
+        @param train_data_dict: Training data dictionary
+        @param log: Logging to the MlFlow
+        """
         # Preparing data
         cov_f, treat_f, out_f = self.prepare_train_data(train_data_dict)
         cov_f = torch.tensor(self.cov_scaler.fit_transform(cov_f)).float()
@@ -156,7 +191,13 @@ class AIPTWKDE(InterventionalDensityEstimator):
         # Calculating normalization constants for correct log-likelihood
         self.set_norm_consts() if self.normalized else None
 
-    def inter_log_prob(self, treat_pot, out_pot):
+    def inter_log_prob(self, treat_pot, out_pot) -> np.array:
+        """
+        Interventional log-probability for large datasets
+        @param treat_pot: Tensor of potential treatments
+        @param out_pot: Tensor of potential outcome values
+        @return: Tensor with log-probabilities
+        """
         _, treat_pot, out_pot = self.prepare_tensors(None, treat_pot, out_pot, kind='torch')
         prob_pot = np.zeros((out_pot.shape[0], 1))
 
@@ -179,7 +220,14 @@ class AIPTWKDE(InterventionalDensityEstimator):
         prob_pot[prob_pot <= 0.0] = 1e-10  # Zeroing negative values
         return np.log(prob_pot)
 
-    def neg_mse_and_neg_bce(self, treat_f, out_f, cov_f):
+    def neg_mse_and_neg_bce(self, treat_f, out_f, cov_f) -> torch.Tensor:
+        """
+        Sum of negative MSE and negative BCE
+        @param treat_f: Tensor with factual treatments
+        @param out_f: Tensor with factual outcomes
+        @param cov_f: Tensor with factual covariates
+        @return: Tensor with the sum of negative MSE and negative BCE
+        """
         # Preparing data
         cov_f, treat_f, out_f = self.prepare_tensors(cov_f, treat_f, out_f, kind='torch')
         cov_f = torch.tensor(self.cov_scaler.transform(cov_f)).float()
@@ -189,6 +237,11 @@ class AIPTWKDE(InterventionalDensityEstimator):
 
         return - mse_loss - self.prop_alpha * bce_loss
 
-    def inter_mean(self, treat_option, **kwargs):
+    def inter_mean(self, treat_option, **kwargs) -> float:
+        """
+        Mean of potential outcomes
+        @param treat_option: Treatment 0 / 1
+        @return: mean
+        """
         logger.warning('Calculation of mean is not implemented for this method.')
         return 0.0

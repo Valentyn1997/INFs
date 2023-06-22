@@ -4,8 +4,9 @@ from omegaconf import DictConfig
 from sklearn.preprocessing import StandardScaler
 from sklearn.gaussian_process.kernels import RBF
 from sklearn.gaussian_process import GaussianProcessRegressor
-from src.models import InterventionalDensityEstimator
+from typing import Tuple
 
+from src.models import InterventionalDensityEstimator
 from src.models.utils import NormalizedRBF
 
 logger = logging.getLogger(__name__)
@@ -41,18 +42,32 @@ class PluginDKME(InterventionalDensityEstimator):
         self.betas = {}
         self.norm_const = np.array([1.0, 1.0])  # Will be updated after fit
 
-    def prepare_train_data(self, train_data_dict: dict):
+    def prepare_train_data(self, train_data_dict: dict) -> Tuple[np.array]:
+        """
+        Data pre-processing
+        :param train_data_dict: Dictionary with the training data
+        """
         cov_f, treat_f, out_f = self.prepare_tensors(train_data_dict['cov_f'], train_data_dict['treat_f'],
                                                      train_data_dict['out_f'], kind='numpy')
         self.hparams.dataset.n_samples_train = cov_f.shape[0]
         return cov_f, treat_f, out_f
 
     @staticmethod
-    def set_hparams(model_args: DictConfig, new_model_args: dict):
+    def set_hparams(model_args: DictConfig, new_model_args: dict) -> None:
+        """
+        Set hyperparameters during tuning
+        @param model_args: Default hparameters
+        @param new_model_args: Hparameters for tuning
+        """
         model_args.sd_x = new_model_args['sd_x']
         model_args.eps = new_model_args['eps']
 
-    def fit(self, train_data_dict: dict, log: bool):
+    def fit(self, train_data_dict: dict, log: bool) -> None:
+        """
+        Fitting the estimator
+        @param train_data_dict: Training data dictionary
+        @param log: Logging to the MlFlow
+        """
         # Preparing data
         cov_f, treat_f, out_f = self.prepare_train_data(train_data_dict)
         cov_f = self.cov_scaler.fit_transform(cov_f)
@@ -83,7 +98,14 @@ class PluginDKME(InterventionalDensityEstimator):
         # Calculating normalization constants for correct log-likelihood
         self.set_norm_consts() if self.normalized else None
 
-    def kernel_ridge_reg_neg_mse(self, treat_f, out_f, cov_f):
+    def kernel_ridge_reg_neg_mse(self, treat_f, out_f, cov_f) -> np.array:
+        """
+        Negative MSE of the kernel ridge regression with the same hyperparameters as DKME
+        @param treat_f: Tensor with factual treatments
+        @param out_f: Tensor with factual outcomes
+        @param cov_f: Tensor with factual covariates
+        @return: Negative MSE
+        """
         cov_f, treat_f, out_f = self.prepare_tensors(cov_f, treat_f, out_f, kind='numpy')
         cov_f = self.cov_scaler.transform(cov_f)
 
@@ -95,7 +117,13 @@ class PluginDKME(InterventionalDensityEstimator):
             mses[treat_f == treat_option] = ((out_pred - out_f[treat_f == treat_option]) ** 2)
         return - mses
 
-    def inter_log_prob(self, treat_pot, out_pot):
+    def inter_log_prob(self, treat_pot, out_pot) -> np.array:
+        """
+        Interventional log-probability for large datasets
+        @param treat_pot: Tensor of potential treatments
+        @param out_pot: Tensor of potential outcome values
+        @return: Tensor with log-probabilities
+        """
         _, treat_pot, out_pot = self.prepare_tensors(None, treat_pot, out_pot, kind='numpy')
         prob_pot = np.zeros((out_pot.shape[0], 1))
 
@@ -108,7 +136,12 @@ class PluginDKME(InterventionalDensityEstimator):
         prob_pot[prob_pot <= 0.0] = 1e-10  # Zeroing negative values
         return np.log(prob_pot)
 
-    def inter_mean(self, treat_option, **kwargs):
+    def inter_mean(self, treat_option, **kwargs) -> np.array:
+        """
+        Mean of potential outcomes
+        @param treat_option: Treatment 0 / 1
+        @return: mean
+        """
         L = self.out_f[self.treat_f == treat_option]
         betas = self.betas[treat_option]
         return (np.dot(betas.T, L) / np.abs(betas).sum()).squeeze()
