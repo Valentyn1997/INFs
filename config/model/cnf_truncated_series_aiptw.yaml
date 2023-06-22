@@ -4,28 +4,28 @@ model:
   name: cnf_truncated_series_aiptw
 
   # nuisance hparams
-  nuisance_count_bins: ???         # number of knots for nuisance
+  nuisance_count_bins: ???         # number of knots for the nuisance flow (CNF), n_{\text{knots,N}}
   nuisance_hid_dim_multiplier: 10  # ratio between the dimentionalities of the representation and the outcome
-  noise_std_X: ???                # noise regularization for covariates
-  noise_std_Y: ???                # noise regularization for outcomes
-  nuisance_lr: ???
-  batch_size: ???
-  num_epochs: 5000
+  noise_std_X: ???                 # noise regularization for covariates, \sigma^2_x
+  noise_std_Y: ???                 # noise regularization for outcomes, \sigma^2_y
+  nuisance_lr: ???                 # learning rate for the nuisance flow (CNF), \eta_\text{N}
+  batch_size: ???                  # batch size for the nuisance network, b_N
+  num_epochs: 5000                 # n_{\text{iter,N}}
 
   # target hparams
-  noise_ce: 0.0                   # noise regularization for cross-entropy
-  target_n_basis: 10             # number of knots for target
-  target_quadrature: rect        # rect / trap - quadrature method (rectangle / trapezoidal)
-  target_nce_bins: 100           # number of bins to approximate cross-entropy
+  noise_ce: 0.0                    # noise regularization for cross-entropy
+  target_n_basis: 10               # number of basis functions for truncated series, d
+  target_quadrature: rect          # rect / trap - quadrature method (rectangle / trapezoidal)
+  target_nce_bins: 100             # number of bins to approximate cross-entropy, K
 
   # General hparams
-  prop_alpha: 1.0                 # alpha
-  clip_prop: 0.05                 # drop observations with too low propensity
-  n_mc: 10000                     # number of samples for ATE estimation
+  prop_alpha: 1.0                  # alpha
+  clip_prop: 0.05                  # drop observations with too low propensity (for the A-IPTW objective)
+  n_mc: 10000                      # number of samples for ATE estimation
 
   # Tuning
   tune_hparams: False
-  tune_range: 50                  # number of trials for random search
+  tune_range: 50                   # number of trials for random search
   tune_type: choice
   hparams_grid:
     nuisance_count_bins:

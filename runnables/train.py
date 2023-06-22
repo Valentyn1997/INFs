@@ -58,11 +58,7 @@ def main(args: DictConfig):
                 model.finetune(train_data_dict, {'cpu': 1.0, 'gpu': 0.0})
 
             # Fitting the model
-            # try:
             model.fit(train_data_dict=train_data_dict, log=args.exp.logging)
-            # except Exception:
-            #     logger.warning('There were errors while fitting the model.')
-            #     continue
 
             # Evaluation
             if 'out_pot_0' in train_data_dict and 'out_pot_1' in train_data_dict:
@@ -112,7 +108,7 @@ def main(args: DictConfig):
             # try:
             # filename = dataset.simulation_files_f[args.dataset.dataset_ix].split('/')[-1].split('.')[0].split('_')[-1]
             # filename = dataset.simulation_files[args.dataset.dataset_ix].split('/')[-1].split('.')[0].split('_')[-1]
-            filename = 'hcmnist-results' #f'{filename}_{split_ix}'
+            # filename = 'hcmnist-results' #f'{filename}_{split_ix}'
             plot_interventional_densities(data_dict, model, out_scaler=dataset.out_scaler, save_to_dir=True, filename=filename) \
                 if args.exp.plotting else None
             # except Exception:

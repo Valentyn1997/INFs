@@ -4,9 +4,9 @@ model:
   name: dkme
 
   # DKME hparams
-  sd_y: 0.1                     # outcome kernel smoothness
+  sd_y: 0.1                     # outcome kernel smoothness, \sigma_{a,l}
   median_sd_y_heuristic: True   # use median heuristic, if True, value of sd_y is ignored
-  sd_x: 10                      # conditional kernel smoothness
+  sd_x: 10                      # conditional kernel smoothness, \sigma_k
   eps: 10                       # regularization parameter
   normalized: True              # perform re-normalization
   norm_bins: 1000               # number bins for re-normalization
