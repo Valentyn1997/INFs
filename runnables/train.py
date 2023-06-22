@@ -4,7 +4,7 @@ import torch
 from omegaconf import DictConfig, OmegaConf
 from hydra.utils import instantiate
 import numpy as np
-from pytorch_lightning.utilities.seed import seed_everything
+from lightning_lite.utilities.seed import seed_everything
 from sklearn.model_selection import ShuffleSplit, KFold
 from scipy.stats import wasserstein_distance
 
