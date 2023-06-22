@@ -44,10 +44,10 @@ PYTHONPATH=.  python3 runnables/train.py +dataset=<dataset> +model=<backbone> ex
 ### Models (baselines)
 One needs to choose a model and then fill the specific hyperparameters (they are left blank in the configs):
 - Interventional Normalizing Flows (this paper):
-  - main: `+model=aiptw_teacher_student`
+  - main: `+model=infs_aiptw`
   - w/o stud flow (= [Conditional Normalizing Flow](https://arxiv.org/pdf/1802.04908.pdf)): `+model=infs_plugin`
-  - w/o bias corr: `+model=teacher_student`
-- [Conditional Normalizing Flows + Truncated Series Estimator](https://academic.oup.com/biomet/advance-article-abstract/doi/10.1093/biomet/asad017/7068801?redirectedFrom=fulltext) (CNF + TS): `+model=aiptw_truncated_series`
+  - w/o bias corr: `+model=infs_covariate_adjusted`
+- [Conditional Normalizing Flows + Truncated Series Estimator](https://academic.oup.com/biomet/advance-article-abstract/doi/10.1093/biomet/asad017/7068801?redirectedFrom=fulltext) (CNF + TS): `+model=cnf_truncated_series_aiptw`
 - [Mixture Density Networks](https://publications.aston.ac.uk/id/eprint/373/1/NCRG_94_004.pdf) (MDNs): `+model=mdn_plugin`
 - [Kernel Density Estimation](https://arxiv.org/pdf/1806.02935.pdf) (KDE): `+model=kde`
 - [Distributional Kernel Mean Embeddings](https://arxiv.org/pdf/1805.08845.pdf) (DKME): `+model=dkme`
@@ -93,7 +93,7 @@ One needs to specify a dataset / dataset generator (and some additional paramete
 ### Examples
 Example of running 10-fold run with INFs (main) on Synthetic data with b = [2.0, 3.0, 4.0]:
 ```console
-PYTHONPATH=. python3 runnables/train.py -m +dataset=polynomial_normal +model=aiptw_teacher_student +model/polynomial_normal_hparams/infs='2.0','3.0','4.0' exp.seed=10
+PYTHONPATH=. python3 runnables/train.py -m +dataset=polynomial_normal +model=infs_aiptw +model/polynomial_normal_hparams/infs='2.0','3.0','4.0' exp.seed=10
 ```
 
 Example of running 5 runs with random splits with MDNs on the first subset of ACIC 2016 (with tuning, based on the first split):
@@ -103,6 +103,6 @@ PYTHONPATH=. python3 runnables/train.py -m +dataset=acic_2016 +model=mdn_plugin 
 
 Example of running 10 runs with random splits with INFs (main) on HC-MNIST:
 ```console
-PYTHONPATH=. python3 runnables/train.py -m +dataset=hcmnist +model=aiptw_teacher_student +model/hcmnist_hparams=infs model.student_count_bins=10 exp.seed=101 model.num_epochs=15000 model.student_num_epochs=5000 model.teacher_hid_dim_multiplier=30 dataset.n_shuffle_splits=10
+PYTHONPATH=. python3 runnables/train.py -m +dataset=hcmnist +model=infs_aiptw +model/hcmnist_hparams=infs model.target_count_bins=10 exp.seed=101 model.num_epochs=15000 model.target_num_epochs=5000 model.nuisance_hid_dim_multiplier=30 dataset.n_shuffle_splits=10
 ```
 

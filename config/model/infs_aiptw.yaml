@@ -3,24 +3,24 @@ model:
   _target_: src.models.infs.AIPTWINFs
   name: infs_aiptw
 
-  # Teacher hparams
-  teacher_count_bins: ???         # number of knots for teacher
-  teacher_hid_dim_multiplier: 10  # ratio between the dimentionalities of the representation and the outcome
+  # nuisance hparams
+  nuisance_count_bins: ???         # number of knots for nuisance
+  nuisance_hid_dim_multiplier: 10  # ratio between the dimentionalities of the representation and the outcome
   noise_std_X: ???                # noise regularization for covariates
   noise_std_Y: ???                # noise regularization for outcomes
-  teacher_lr: ???
+  nuisance_lr: ???
   batch_size: ???
   num_epochs: 5000
 
-  # Student hparams
+  # target hparams
   noise_ce: 0.0                   # noise regularization for cross-entropy
-  student_count_bins:             # number of knots for student
-  student_quadrature: rect        # rect / trap - quadrature method (rectangle / trapezoidal)
-  student_lr: 0.005
-  student_mode: batch             # batch / full  - using a batch of data or full dataset for one iteration of student
-  student_nce_bins: 100           # number of bins to approximate cross-entropy
-  student_ema: 0.995              # EMA of model weights for student
-  student_num_epochs: 4000
+  target_count_bins:             # number of knots for target
+  target_quadrature: rect        # rect / trap - quadrature method (rectangle / trapezoidal)
+  target_lr: 0.005
+  target_mode: batch             # batch / full  - using a batch of data or full dataset for one iteration of target
+  target_nce_bins: 100           # number of bins to approximate cross-entropy
+  target_ema: 0.995              # EMA of model weights for target
+  target_num_epochs: 4000
 
   # General hparams
   prop_alpha: 1.0                 # alpha
@@ -32,7 +32,7 @@ model:
   tune_range: 50                  # number of trials for random search
   tune_type: choice
   hparams_grid:
-    teacher_count_bins:
+    nuisance_count_bins:
       - 5
       - 10
       - 20
@@ -46,7 +46,7 @@ model:
       - 0.01
       - 0.05
       - 0.1
-    teacher_lr:
+    nuisance_lr:
       - 1e-3
       - 5e-3
     batch_size:

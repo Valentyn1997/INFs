@@ -4,10 +4,10 @@ model:
   name: gauss_tarnet_plugin
 
   # GaussianTARNet hparams
-  teacher_hid_dim_multiplier: 10    # ratio between the dimentionalities of the representation and the outcome
+  nuisance_hid_dim_multiplier: 10    # ratio between the dimentionalities of the representation and the outcome
   noise_std_X: 0.01                 # noise regularization for covariates
   noise_std_Y: 0.01                 # noise regularization for outcomes
-  teacher_lr: 0.005
+  nuisance_lr: 0.005
   batch_size: 64
   num_epochs: 5000
 
@@ -29,7 +29,7 @@ model:
       - 0.01
       - 0.05
       - 0.1
-    teacher_lr:
+    nuisance_lr:
       - 1e-3
       - 5e-3
     batch_size:

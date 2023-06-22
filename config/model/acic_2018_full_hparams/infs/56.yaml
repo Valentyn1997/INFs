@@ -5,5 +5,5 @@ model:
   batch_size: 32
   noise_std_X: 0.05
   noise_std_Y: 0.1
-  teacher_count_bins: 10
-  teacher_lr: 0.005
+  nuisance_count_bins: 10
+  nuisance_lr: 0.005

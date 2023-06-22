@@ -3,20 +3,20 @@ model:
   _target_: src.models.infs.AIPTWCNFTruncatedSeries
   name: cnf_truncated_series_aiptw
 
-  # Teacher hparams
-  teacher_count_bins: ???         # number of knots for teacher
-  teacher_hid_dim_multiplier: 10  # ratio between the dimentionalities of the representation and the outcome
+  # nuisance hparams
+  nuisance_count_bins: ???         # number of knots for nuisance
+  nuisance_hid_dim_multiplier: 10  # ratio between the dimentionalities of the representation and the outcome
   noise_std_X: ???                # noise regularization for covariates
   noise_std_Y: ???                # noise regularization for outcomes
-  teacher_lr: ???
+  nuisance_lr: ???
   batch_size: ???
   num_epochs: 5000
 
-  # Student hparams
+  # target hparams
   noise_ce: 0.0                   # noise regularization for cross-entropy
-  student_n_basis: 10             # number of knots for student
-  student_quadrature: rect        # rect / trap - quadrature method (rectangle / trapezoidal)
-  student_nce_bins: 100           # number of bins to approximate cross-entropy
+  target_n_basis: 10             # number of knots for target
+  target_quadrature: rect        # rect / trap - quadrature method (rectangle / trapezoidal)
+  target_nce_bins: 100           # number of bins to approximate cross-entropy
 
   # General hparams
   prop_alpha: 1.0                 # alpha
@@ -28,7 +28,7 @@ model:
   tune_range: 50                  # number of trials for random search
   tune_type: choice
   hparams_grid:
-    teacher_count_bins:
+    nuisance_count_bins:
       - 5
       - 10
       - 20
@@ -42,7 +42,7 @@ model:
       - 0.01
       - 0.05
       - 0.1
-    teacher_lr:
+    nuisance_lr:
       - 1e-3
       - 5e-3
     batch_size:

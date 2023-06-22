@@ -1,7 +1,7 @@
 # @package _global_
 model:
-  teacher_num_comp: 20
+  nuisance_num_comp: 20
   noise_std_X: 0.1
   noise_std_Y: 0.0
-  teacher_lr: 0.001
+  nuisance_lr: 0.001
   batch_size: 32

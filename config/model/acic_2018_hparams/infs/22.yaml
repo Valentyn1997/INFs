@@ -1,9 +1,9 @@
 # @package _global_
 model:
-  teacher_count_bins: 20
+  nuisance_count_bins: 20
   noise_std_X: 0.05
   noise_std_Y: 0.01
-  teacher_lr: 0.001
+  nuisance_lr: 0.001
   batch_size: 64
 dataset:
   dataset_ix: 22

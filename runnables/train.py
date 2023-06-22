@@ -49,8 +49,8 @@ def main(args: DictConfig):
             # Initialisation of model
             args.dataset.dataset_ix = ix if not specific_ix else args.dataset.dataset_ix
             args.dataset.split_ix = split_ix
-            args.model.teacher_bound = float(train_data_dict['out_f'].max() - train_data_dict['out_f'].min()) + 5.0
-            args.model.student_bound = float(train_data_dict['out_f'].max() - train_data_dict['out_f'].min()) + 5.0
+            args.model.nuisance_bound = float(train_data_dict['out_f'].max() - train_data_dict['out_f'].min()) + 5.0
+            args.model.target_bound = float(train_data_dict['out_f'].max() - train_data_dict['out_f'].min()) + 5.0
             model = instantiate(args.model, args, _recursive_=True)
 
             # Finetuning for the first split

@@ -2,5 +2,5 @@
 model:
   noise_std_X: 0.1
   noise_std_Y: 0.1
-  teacher_lr: 0.001
+  nuisance_lr: 0.001
   batch_size: 32

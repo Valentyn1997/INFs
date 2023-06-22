@@ -1,12 +1,12 @@
 # @package _global_
 model:
-  teacher_count_bins: 10
+  nuisance_count_bins: 10
   noise_std_X: 0.01
   noise_std_Y: 0.01
-  teacher_lr: 1e-3
+  nuisance_lr: 1e-3
   batch_size: 64
 
-  student_count_bins: 5
+  target_count_bins: 5
 
 dataset:
   cov_shift: 4.0

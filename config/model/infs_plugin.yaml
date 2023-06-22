@@ -3,12 +3,12 @@ model:
   _target_: src.models.infs.PluginINFs
   name: infs_plugin
 
-  # Teacher hparams
-  teacher_count_bins: ???           # number of knots for teacher
-  teacher_hid_dim_multiplier: 10    # ratio between the dimentionalities of the representation and the outcome
+  # nuisance hparams
+  nuisance_count_bins: ???           # number of knots for nuisance
+  nuisance_hid_dim_multiplier: 10    # ratio between the dimentionalities of the representation and the outcome
   noise_std_X: ???                  # noise regularization for covariates
   noise_std_Y: ???                  # noise regularization for outcomes
-  teacher_lr: ???
+  nuisance_lr: ???
   batch_size: ???
   num_epochs: 5000
 
@@ -20,7 +20,7 @@ model:
   tune_range: 50                    # number of trials for random search
   tune_type: choice
   hparams_grid:
-    teacher_count_bins:
+    nuisance_count_bins:
       - 5
       - 10
       - 20
@@ -34,7 +34,7 @@ model:
       - 0.01
       - 0.05
       - 0.1
-    teacher_lr:
+    nuisance_lr:
       - 1e-3
       - 5e-3
     batch_size:
