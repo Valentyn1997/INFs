@@ -12,7 +12,7 @@ model:
   norm_bins: 1000               # number bins for re-normalization
 
   # Tuning
-  tune_hparams: True
+  tune_hparams: False
   tune_range: 1
   tune_type: grid_search
   hparams_grid:

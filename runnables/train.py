@@ -109,7 +109,7 @@ def main(args: DictConfig):
             # filename = dataset.simulation_files_f[args.dataset.dataset_ix].split('/')[-1].split('.')[0].split('_')[-1]
             # filename = dataset.simulation_files[args.dataset.dataset_ix].split('/')[-1].split('.')[0].split('_')[-1]
             # filename = 'hcmnist-results' #f'{filename}_{split_ix}'
-            plot_interventional_densities(data_dict, model, out_scaler=dataset.out_scaler, save_to_dir=True, filename=filename) \
+            plot_interventional_densities(data_dict, model, out_scaler=dataset.out_scaler, save_to_dir=True) \
                 if args.exp.plotting else None
             # except Exception:
             #     pass

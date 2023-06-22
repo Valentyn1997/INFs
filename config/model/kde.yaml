@@ -17,7 +17,7 @@ model:
   prop_alpha: 1.0                 # alpha (0.01, if pure_functional == False)
 
   # Tuning
-  tune_hparams: True
+  tune_hparams: False
   tune_range: 1
   tune_type: grid_search
   hparams_grid:
