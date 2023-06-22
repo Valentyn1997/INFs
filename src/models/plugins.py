@@ -15,14 +15,14 @@ from src.models import InterventionalDensityEstimator
 logger = logging.getLogger(__name__)
 
 
-class PluginMarginalizedTeacher(InterventionalDensityEstimator):
+class PluginInterventionalDensityEstimator(InterventionalDensityEstimator):
     """
-    Semi-parametric model for interventional density based on abstract conditional density estimator (marginalized teacher)
+    Abstract class for semi-parametric plugin interventional density estimator
     """
     tune_criterion = 'cond_log_prob'
 
     def __init__(self, args: DictConfig = None, **kwargs):
-        super(PluginMarginalizedTeacher, self).__init__(args)
+        super(PluginInterventionalDensityEstimator, self).__init__(args)
 
         self.cov_scaler = StandardScaler()
 
@@ -49,8 +49,9 @@ class PluginMarginalizedTeacher(InterventionalDensityEstimator):
         train_dataloader = DataLoader(training_data, batch_size=self.batch_size, shuffle=True)
         return train_dataloader
 
-    def prepare_train_data(self, data_dict: dict):
-        cov_f, treat_f, out_f = self.prepare_tensors(data_dict['cov_f'], data_dict['treat_f'], data_dict['out_f'], kind='torch')
+    def prepare_train_data(self, train_data_dict: dict):
+        cov_f, treat_f, out_f = self.prepare_tensors(train_data_dict['cov_f'], train_data_dict['treat_f'],
+                                                     train_data_dict['out_f'], kind='torch')
         self.hparams.dataset.n_samples_train = cov_f.shape[0]
         return cov_f, treat_f, out_f
 
@@ -164,12 +165,12 @@ class PluginMarginalizedTeacher(InterventionalDensityEstimator):
             return cond_dist.mean.mean(0).numpy()
 
 
-class PluginGaussianTARNetMarginalizedTeacher(PluginMarginalizedTeacher):
+class PluginGaussianTARNet(PluginInterventionalDensityEstimator):
     """
-    Semi-parametric model for interventional density based on TARNet with Gaussian cond outcomes (marginalized teacher)
+    TARNet*: Semi-parametric plugin interventional density estimator with TARNET and gaussian distribution
     """
     def __init__(self, args: DictConfig = None, **kwargs):
-        super(PluginGaussianTARNetMarginalizedTeacher, self).__init__(args)
+        super(PluginGaussianTARNet, self).__init__(args)
         self.cond_dist_nn = DenseNN(self.dim_hid + self.dim_treat, [self.dim_hid],
                                     param_dims=[self.dim_out]).float()
         self.log_std = torch.nn.Parameter(torch.zeros((self.dim_out, )))
@@ -197,12 +198,12 @@ class PluginGaussianTARNetMarginalizedTeacher(PluginMarginalizedTeacher):
         return cond_normal.log_prob(out).squeeze()
 
 
-class PluginMixtureDensityMarginalizedTeacher(PluginMarginalizedTeacher):
+class PluginMDN(PluginInterventionalDensityEstimator):
     """
-    Semi-parametric model for interventional density based on mixture density networks (marginalized teacher)
+    MDNs: Semi-parametric plugin interventional density estimator with mixture density networks
     """
     def __init__(self, args: DictConfig = None, **kwargs):
-        super(PluginMixtureDensityMarginalizedTeacher, self).__init__(args)
+        super(PluginMDN, self).__init__(args)
 
         # Model hyparams & Train params
         self.teacher_num_comp = args.model.teacher_num_comp

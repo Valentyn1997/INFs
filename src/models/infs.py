@@ -17,15 +17,15 @@ from src.models import InterventionalDensityEstimator
 logger = logging.getLogger(__name__)
 
 
-class PluginInterFlowMarginalizedTeacher(InterventionalDensityEstimator):
+class PluginINFs(InterventionalDensityEstimator):
     """
-    Semi-parametric model for interventional density based on averaged output of conditional NFs (marginalized teacher)
+    CNF [=INFs w/o target flow]: Semi-parametric plugin interventional density estimator with conditional normalizing flows
     """
 
     tune_criterion = 'cond_log_prob'
 
     def __init__(self, args: DictConfig = None, **kwargs):
-        super(PluginInterFlowMarginalizedTeacher, self).__init__(args)
+        super(PluginINFs, self).__init__(args)
 
         self.cov_scaler = StandardScaler()
         self.device = 'cpu'
@@ -92,8 +92,9 @@ class PluginInterFlowMarginalizedTeacher(InterventionalDensityEstimator):
         model_args.teacher_lr = new_model_args['teacher_lr']
         model_args.batch_size = new_model_args['batch_size']
 
-    def prepare_train_data(self, data_dict: dict):
-        cov_f, treat_f, out_f = self.prepare_tensors(data_dict['cov_f'], data_dict['treat_f'], data_dict['out_f'], kind='torch')
+    def prepare_train_data(self, train_data_dict: dict):
+        cov_f, treat_f, out_f = self.prepare_tensors(train_data_dict['cov_f'], train_data_dict['treat_f'],
+                                                     train_data_dict['out_f'], kind='torch')
         self.hparams.dataset.n_samples_train = cov_f.shape[0]
         return cov_f, treat_f, out_f
 
@@ -211,15 +212,16 @@ class PluginInterFlowMarginalizedTeacher(InterventionalDensityEstimator):
         return self.inter_sample(treat_pot, 1).mean((0, 1)).numpy()
 
 
-class PluginInterFlowTeacherStudent(PluginInterFlowMarginalizedTeacher):
+class CovariateAdjustedINFs(PluginINFs):
     """
-    Fully-parametric NF (student), fitted with averaged output of conditional NFs (marginalized teacher)
+    INFs w/o bias corr: Fully-parametric covariate-adjusted interventional density estimator with (i) conditional normalizing
+    flows and (ii) normalizing flows
     """
 
     tune_criterion = "cond_log_prob"
 
     def __init__(self, args: DictConfig = None, **kwargs):
-        super(PluginInterFlowTeacherStudent, self).__init__(args)
+        super(CovariateAdjustedINFs, self).__init__(args)
 
         # Model hyparams & Train params
         self.student_count_bins = args.model.student_count_bins if args.model.student_count_bins is not None \
@@ -405,12 +407,16 @@ class PluginInterFlowTeacherStudent(PluginInterFlowMarginalizedTeacher):
         return self.inter_sample(treat_pot, 1).mean((0, 1))
 
 
-class AIPTWInterFlowTeacherStudent(PluginInterFlowTeacherStudent):
+class AIPTWINFs(CovariateAdjustedINFs):
+    """
+    INFs (main): Fully-parametric A-IPTW interventional density estimator with (i) conditional normalizing flows and
+    (ii) normalizing flows
+    """
 
     tune_criterion = "cond_log_prob"
 
     def __init__(self, args: DictConfig = None, **kwargs):
-        super(AIPTWInterFlowTeacherStudent, self).__init__(args)
+        super(AIPTWINFs, self).__init__(args)
 
         # Model hyparams & Train params
         self.has_prop_score = True
@@ -534,12 +540,17 @@ class AIPTWInterFlowTeacherStudent(PluginInterFlowTeacherStudent):
             self.ema_student.update()
 
 
-class AIPTWTruncatedSeries(PluginInterFlowMarginalizedTeacher):
+class AIPTWCNFTruncatedSeries(PluginINFs):
+    """
+    CNF+TS: Fully-parametric A-IPTW interventional density estimator with (i) conditional normalizing flows and (ii) truncated
+    series
+    Kennedy, E. H., Balakrishnan, S., and Wasserman, L. Semi-parametric counterfactual density estimation. Biometrika, 2023.
+    """
 
     tune_criterion = "cond_log_prob"
 
     def __init__(self, args: DictConfig = None, **kwargs):
-        super(AIPTWTruncatedSeries, self).__init__(args)
+        super(AIPTWCNFTruncatedSeries, self).__init__(args)
 
         # Model hyparams & Train params
         self.has_prop_score = True

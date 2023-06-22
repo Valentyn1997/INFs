@@ -4,6 +4,9 @@ from sklearn import preprocessing
 
 
 class PolynomialNormal:
+    """
+    Synthetic data using the SCM
+    """
 
     def __init__(self, seed=42, n_samples=5000, cov_shift=3.0, C0=[1.2, 2.3, 0.25], C1=[1.5, 1.0, 0.1], normalize_out=False,
                  **kwargs):

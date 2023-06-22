@@ -4,6 +4,10 @@ from sklearn import preprocessing
 
 
 class NoisyMoons:
+    """
+    2D Synthetic dataset
+    """
+
     def __init__(self, seed=42, n_samples=5000, noise=0.5, normalize_out=True, theta_0=np.pi / 4, theta_1=-np.pi / 4, **kwargs):
 
         self.n_samples = n_samples

@@ -1,6 +1,6 @@
 # @package _global_
 model:
-  _target_: src.models.kde.AIPTWKernelEstimator
+  _target_: src.models.kde.AIPTWKDE
   name: kde
 
   # KDE hparams

@@ -11,13 +11,18 @@ from src.models.utils import NormalizedRBF
 logger = logging.getLogger(__name__)
 
 
-class PluginKernelMeanEmbedding(InterventionalDensityEstimator):
+class PluginDKME(InterventionalDensityEstimator):
+    """
+    DKME: Non-parametric plugin interventional density estimator with distributional kernel mean embedding
+    Muandet, K., Kanagawa, M., Saengkyongam, S., and Marukatat, S. Counterfactual mean embeddings. Journal of Machine Learning
+    Research, 22:1–71, 2021.
+    """
 
     tune_criterion = 'kernel_ridge_reg_neg_mse'
 
     def __init__(self, args: DictConfig = None, **kwargs):
 
-        super(PluginKernelMeanEmbedding, self).__init__(args)
+        super(PluginDKME, self).__init__(args)
 
         self.cov_scaler = StandardScaler()
 
@@ -36,8 +41,9 @@ class PluginKernelMeanEmbedding(InterventionalDensityEstimator):
         self.betas = {}
         self.norm_const = np.array([1.0, 1.0])  # Will be updated after fit
 
-    def prepare_train_data(self, data_dict: dict):
-        cov_f, treat_f, out_f = self.prepare_tensors(data_dict['cov_f'], data_dict['treat_f'], data_dict['out_f'], kind='numpy')
+    def prepare_train_data(self, train_data_dict: dict):
+        cov_f, treat_f, out_f = self.prepare_tensors(train_data_dict['cov_f'], train_data_dict['treat_f'],
+                                                     train_data_dict['out_f'], kind='numpy')
         self.hparams.dataset.n_samples_train = cov_f.shape[0]
         return cov_f, treat_f, out_f
 

@@ -8,6 +8,7 @@ import ray
 from copy import deepcopy
 from sklearn.model_selection import KFold
 from scipy.spatial.distance import pdist, squareform
+from typing import Tuple, Union
 
 from src.models.utils import subset_by_indices, NormalizedRBF
 
@@ -16,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 def fit_eval_kfold(args: dict, orig_hparams: DictConfig, model_cls, train_data_dict: dict, **kwargs):
     """
-    Globally defined method, used for ray tuning
+    Globally defined method, used for hyperparameter tuning with ray
     :param args: Hyperparameter configuration
     :param orig_hparams: DictConfig of original hyperparameters
     :param model_cls: class of model
@@ -41,6 +42,9 @@ def fit_eval_kfold(args: dict, orig_hparams: DictConfig, model_cls, train_data_d
 
 
 class InterventionalDensityEstimator(torch.nn.Module):
+    """
+    Abstract class for an interventional density esimator
+    """
 
     tune_criterion = None
 
@@ -60,10 +64,22 @@ class InterventionalDensityEstimator(torch.nn.Module):
             experiment_name = f'{args.model.name}/{args.dataset.name}'
             self.mlflow_logger = MLFlowLogger(experiment_name=experiment_name, tracking_uri=args.exp.mlflow_uri)
 
-    def prepare_train_data(self, data_dict: dict):
+    def prepare_train_data(self, train_data_dict: dict):
+        """
+        Data pre-processing
+        :param train_data_dict: Dictionary with the training data
+        """
         raise NotImplementedError()
 
-    def prepare_tensors(self, cov=None, treat=None, out=None, kind='torch'):
+    def prepare_tensors(self, cov=None, treat=None, out=None, kind='torch') -> Tuple[dict]:
+        """
+        Conversion of tensors
+        @param cov: Tensor with covariates
+        @param treat: Tensor with treatments
+        @param out: Tensor with outcomes
+        @param kind: torch / numpy
+        @return: cov, treat, out
+        """
         if kind == 'torch':
             cov = torch.tensor(cov).reshape(-1, self.dim_cov).float() if cov is not None else None
             treat = torch.tensor(treat).reshape(-1, self.dim_treat).float() if treat is not None else None
@@ -76,28 +92,66 @@ class InterventionalDensityEstimator(torch.nn.Module):
             raise NotImplementedError()
         return cov, treat, out
 
-    def fit(self, train_data_dict: dict, log: bool):
+    def fit(self, train_data_dict: dict, log: bool) -> None:
+        """
+        Fitting the estimator
+        @param train_data_dict: Training data dictionary
+        @param log: Logging to the MlFlow
+        """
         raise NotImplementedError()
 
-    def inter_log_prob(self, treat_pot, out_pot):
+    def inter_log_prob(self, treat_pot, out_pot) -> Union[np.array, torch.Tensor]:
+        """
+        Interventional log-probability
+        @param treat_pot: Tensor of potential treatments
+        @param out_pot: Tensor of potential outcome values
+        @return: Tensor with log-probabilities
+        """
         raise NotImplementedError()
 
-    def inter_sample(self, treat_pot, n_samples):
+    def inter_sample(self, treat_pot, n_samples) -> Union[np.array, torch.Tensor]:
+        """
+        Sampling from the estimated interventional density
+        @param treat_pot: Tensor of potential treatments
+        @param n_samples: number of samples
+        @return: Tensor with sampled data
+        """
         raise NotImplementedError()
 
-    def inter_mean(self, treat_option, **kwargs):
+    def inter_mean(self, treat_option, **kwargs) -> Union[np.array, torch.Tensor]:
+        """
+        Mean of potential outcomes
+        @param treat_option: Treatment 0 / 1
+        @return: mean
+        """
         raise NotImplementedError()
 
-    def save_train_data_to_buffer(self, cov_f, treat_f, out_f):
+    def save_train_data_to_buffer(self, cov_f, treat_f, out_f) -> None:
+        """
+        Save train data for non-parametric inference of two-stage training
+        @param cov_f: Tensor with factual covariates
+        @param treat_f: Tensor with factual treatments
+        @param out_f: Tensor with factual outcomes
+        """
         self.cov_f = cov_f
         self.treat_f = treat_f
         self.out_f = out_f
 
     @staticmethod
-    def set_hparams(model_args: DictConfig, new_model_args: dict):
+    def set_hparams(model_args: DictConfig, new_model_args: dict) -> None:
+        """
+        Set hyperparameters during tuning
+        @param model_args: Default hparameters
+        @param new_model_args: Hparameters for tuning
+        """
         raise NotImplementedError()
 
-    def set_norm_consts(self, add_bound=2.5):
+    def set_norm_consts(self, add_bound=2.5) -> None:
+        """
+        Calculating normalization constants for improperly normalized density estimators
+        @param add_bound: Additional bounds for normalization of truncated series estimator
+        """
+
         self.norm_const = [1.0, 1.0]
         logger.info('Calculating normalization constants')
 
@@ -124,7 +178,10 @@ class InterventionalDensityEstimator(torch.nn.Module):
             prob = np.exp(log_prob)
             self.norm_const[i] = prob.sum() * dx
 
-    def set_sd_y_median_heuristic(self):
+    def set_sd_y_median_heuristic(self) -> None:
+        """
+        Calculate median heuristics (for KDE and DKME)
+        """
         self.sd_y = {}
         for treat_option in self.treat_options:
             distances = np.tril(squareform(pdist(self.out_f[self.treat_f.reshape(-1) == treat_option].reshape(-1, self.dim_out),
@@ -136,6 +193,9 @@ class InterventionalDensityEstimator(torch.nn.Module):
     def finetune(self, train_data_dict: dict, resources_per_trial: dict):
         """
         Hyperparameter tuning with ray[tune]
+        @param train_data_dict: Training data dictionary
+        @param resources_per_trial: CPU / GPU resources dictionary
+        @return: self
         """
 
         logger.info(f"Running hyperparameters selection with {self.hparams.model['tune_range']} trials")

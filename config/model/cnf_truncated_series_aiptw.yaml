@@ -1,7 +1,7 @@
 # @package _global_
 model:
-  _target_: src.models.interflow.AIPTWTruncatedSeries
-  name: aiptw_truncated_series
+  _target_: src.models.infs.AIPTWCNFTruncatedSeries
+  name: cnf_truncated_series_aiptw
 
   # Teacher hparams
   teacher_count_bins: ???         # number of knots for teacher

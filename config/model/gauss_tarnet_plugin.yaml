@@ -1,10 +1,9 @@
 # @package _global_
 model:
-  _target_: src.models.plugins.PluginMixtureDensityMarginalizedTeacher
-  name: mdn
+  _target_: src.models.plugins.PluginGaussianTARNet
+  name: gauss_tarnet_plugin
 
-  # MDN hparams
-  teacher_num_comp: 5               # number of mixture components
+  # GaussianTARNet hparams
   teacher_hid_dim_multiplier: 10    # ratio between the dimentionalities of the representation and the outcome
   noise_std_X: 0.01                 # noise regularization for covariates
   noise_std_Y: 0.01                 # noise regularization for outcomes
@@ -20,10 +19,6 @@ model:
   tune_range: 50                    # number of trials for random search
   tune_type: choice
   hparams_grid:
-    teacher_num_comp:
-      - 5
-      - 10
-      - 20
     noise_std_X:
       - 0.0
       - 0.01

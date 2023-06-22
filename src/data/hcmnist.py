@@ -11,6 +11,12 @@ from src import ROOT_PATH
 
 
 class HCMNIST(datasets.MNIST):
+    """
+    HC-MNIST semi-synthetic dataset
+    Jesson, A., Mindermann, S., Gal, Y., and Shalit, U. Quantifying ignorance in individual-level causal-effect estimates under
+    hidden confounding. In International Conference on Machine Learning, 2021.
+    """
+
     def __init__(
         self,
         root: str = f'{ROOT_PATH}/data/external/hcmnist',
@@ -95,7 +101,7 @@ class HCMNIST(datasets.MNIST):
                 f"{self.mode} not supported. Choose from 'pi'  for propensity models or 'mu' for expected outcome models"
             )
 
-    def get_data(self):
+    def get_data(self) -> dict:
         return {
             'cov_f': np.concatenate([self.x, self.u], axis=1),
             'treat_f': self.t,

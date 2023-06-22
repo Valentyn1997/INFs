@@ -1,7 +1,7 @@
 # @package _global_
 model:
-  _target_: src.models.interflow.PluginInterFlowTeacherStudent
-  name: teacher_student
+  _target_: src.models.infs.CovariateAdjustedINFs
+  name: infs_covariate_adjusted
 
   # Teacher hparams
   teacher_count_bins: ???           # number of knots for teacher

@@ -2,11 +2,15 @@ import glob
 import numpy as np
 import pandas as pd
 from sklearn import preprocessing
+from typing import List
 
 from src import ROOT_PATH
 
 
 class ACIC:
+    """
+    Collections of the semi-synthetic datasets from ACIC competitions of 2016 and 2018
+    """
 
     def __init__(self, year=2018, **kwargs):
         self.year = year
@@ -63,7 +67,7 @@ class ACIC:
         t, y_f, y_cf, x = t.reshape(-1, 1).astype(float), y_f.reshape(-1, 1), y_cf.reshape(-1, 1), x
         return self._postprocess_data(x, t, y_f, y_cf, dataset, standardize)
 
-    def get_data(self):
+    def get_data(self) -> List[dict]:
         if self.year == 2018:
             x_raw = pd.read_csv(self.cov_data_path, index_col='sample_id', header=0, sep=',')
         elif self.year == 2016:
@@ -72,7 +76,6 @@ class ACIC:
 
         datasets = []
         if self.year == 2018:
-
             for file_f, file_cf in zip(self.simulation_files_f, self.simulation_files_cf):
                 datasets.append(self.load_treatment_and_outcome_f_cf(x_raw, file_f, file_cf))
         elif self.year == 2016:

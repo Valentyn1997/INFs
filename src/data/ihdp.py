@@ -6,12 +6,17 @@ from src import ROOT_PATH
 
 
 class IHDP:
+    """
+    Semi-synthetic IHDP dataset taken from
+    https://github.com/AMLab-Amsterdam/CEVAE/blob/master/datasets/IHDP/csv/ihdp_npci_1.csv
+    """
+
     def __init__(self, normalize_out=False, **kwargs):
         self.data_path = f"{ROOT_PATH}/data/ihdp_npci_1.csv"
         self.normalize_out = normalize_out
         self.out_scaler = preprocessing.StandardScaler()
 
-    def get_data(self):
+    def get_data(self) -> dict:
         data = pd.read_csv(self.data_path, header=None)
         col = ["treatment", "y_factual", "y_cfactual", "mu0", "mu1"]
         covarites = []

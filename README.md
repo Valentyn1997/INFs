@@ -43,17 +43,17 @@ PYTHONPATH=.  python3 runnables/train.py +dataset=<dataset> +model=<backbone> ex
 
 ### Models (baselines)
 One needs to choose a model and then fill the specific hyperparameters (they are left blank in the configs):
-- Interventional Normalizing Flows (this paper): `+model=interflow`
+- Interventional Normalizing Flows (this paper):
   - main: `+model=aiptw_teacher_student`
-  - w/o stud flow (= [Conditional Normalizing Flow](https://arxiv.org/pdf/1802.04908.pdf)): `+model=marginalized_teacher`
+  - w/o stud flow (= [Conditional Normalizing Flow](https://arxiv.org/pdf/1802.04908.pdf)): `+model=infs_plugin`
   - w/o bias corr: `+model=teacher_student`
 - [Conditional Normalizing Flows + Truncated Series Estimator](https://academic.oup.com/biomet/advance-article-abstract/doi/10.1093/biomet/asad017/7068801?redirectedFrom=fulltext) (CNF + TS): `+model=aiptw_truncated_series`
-- [Mixture Density Networks](https://publications.aston.ac.uk/id/eprint/373/1/NCRG_94_004.pdf) (MDNs): `+model=mdn`
+- [Mixture Density Networks](https://publications.aston.ac.uk/id/eprint/373/1/NCRG_94_004.pdf) (MDNs): `+model=mdn_plugin`
 - [Kernel Density Estimation](https://arxiv.org/pdf/1806.02935.pdf) (KDE): `+model=kde`
-- [Distributional Kernel Mean Embeddings](https://arxiv.org/pdf/1805.08845.pdf) (DKME): `+model=kme`
-- TARNet* (extended distributional [TARNet](https://arxiv.org/abs/1606.03976)): `+model=gauss_tarnet`
+- [Distributional Kernel Mean Embeddings](https://arxiv.org/pdf/1805.08845.pdf) (DKME): `+model=dkme`
+- TARNet* (extended distributional [TARNet](https://arxiv.org/abs/1606.03976)): `+model=gauss_tarnet_plugin`
 
-Models already have best hyperparameters saved (for each model and dataset), one can access them via: `+model/<dataset>_hparams=<model>` or `+model/<dataset>_hparams/<model>=<dataset_param>`. Hyperparameters for three variants of INFs are the same.
+Models already have best hyperparameters saved (for each model and dataset), one can access them via: `+model/<dataset>_hparams=<model>` or `+model/<dataset>_hparams/<model>=<dataset_param>`. Hyperparameters for three variants of INFs are the same: `+model/<dataset>_hparams=infs`.
 
 To perform a manual hyperparameter tuning use the flags `model.tune_hparams=True`, and then see `model.hparams_grid`. 
 
@@ -93,16 +93,16 @@ One needs to specify a dataset / dataset generator (and some additional paramete
 ### Examples
 Example of running 10-fold run with INFs (main) on Synthetic data with b = [2.0, 3.0, 4.0]:
 ```console
-PYTHONPATH=. python3 runnables/train.py -m +dataset=polynomial_normal +model=aiptw_teacher_student +model/polynomial_normal_hparams/interflow='2.0','3.0','4.0' exp.seed=10
+PYTHONPATH=. python3 runnables/train.py -m +dataset=polynomial_normal +model=aiptw_teacher_student +model/polynomial_normal_hparams/infs='2.0','3.0','4.0' exp.seed=10
 ```
 
 Example of running 5 runs with random splits with MDNs on the first subset of ACIC 2016 (with tuning, based on the first split):
 ```console
-PYTHONPATH=. python3 runnables/train.py -m +dataset=acic_2016 +model=mdn model.tune_hparams=True exp.seed=10 dataset.n_shuffle_splits=5 dataset.dataset_ix=0
+PYTHONPATH=. python3 runnables/train.py -m +dataset=acic_2016 +model=mdn_plugin model.tune_hparams=True exp.seed=10 dataset.n_shuffle_splits=5 dataset.dataset_ix=0
 ```
 
 Example of running 10 runs with random splits with INFs (main) on HC-MNIST:
 ```console
-PYTHONPATH=. python3 runnables/train.py -m +dataset=hcmnist +model=aiptw_teacher_student +model/hcmnist_hparams=interflow model.student_count_bins=10 exp.seed=101 model.num_epochs=15000 model.student_num_epochs=5000 model.teacher_hid_dim_multiplier=30 dataset.n_shuffle_splits=10
+PYTHONPATH=. python3 runnables/train.py -m +dataset=hcmnist +model=aiptw_teacher_student +model/hcmnist_hparams=infs model.student_count_bins=10 exp.seed=101 model.num_epochs=15000 model.student_num_epochs=5000 model.teacher_hid_dim_multiplier=30 dataset.n_shuffle_splits=10
 ```
 

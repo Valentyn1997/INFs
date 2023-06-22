@@ -1,9 +1,9 @@
 # @package _global_
 model:
-  _target_: src.models.kme.PluginKernelMeanEmbedding
-  name: kme
+  _target_: src.models.dkme.PluginDKME
+  name: dkme
 
-  # KME hparams
+  # DKME hparams
   sd_y: 0.1                     # outcome kernel smoothness
   median_sd_y_heuristic: True   # use median heuristic, if True, value of sd_y is ignored
   sd_x: 10                      # conditional kernel smoothness

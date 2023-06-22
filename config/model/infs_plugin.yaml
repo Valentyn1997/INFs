@@ -1,24 +1,29 @@
 # @package _global_
 model:
-  _target_: src.models.plugins.PluginGaussianTARNetMarginalizedTeacher
-  name: gauss_tarnet
+  _target_: src.models.infs.PluginINFs
+  name: infs_plugin
 
-  # GaussianTARNet hparams
+  # Teacher hparams
+  teacher_count_bins: ???           # number of knots for teacher
   teacher_hid_dim_multiplier: 10    # ratio between the dimentionalities of the representation and the outcome
-  noise_std_X: 0.01                 # noise regularization for covariates
-  noise_std_Y: 0.01                 # noise regularization for outcomes
-  teacher_lr: 0.005
-  batch_size: 64
+  noise_std_X: ???                  # noise regularization for covariates
+  noise_std_Y: ???                  # noise regularization for outcomes
+  teacher_lr: ???
+  batch_size: ???
   num_epochs: 5000
 
   # General hparams
-  n_mc: 10000
+  n_mc: 10000                       # number of samples for ATE estimation
 
   # Tuning
   tune_hparams: True
   tune_range: 50                    # number of trials for random search
   tune_type: choice
   hparams_grid:
+    teacher_count_bins:
+      - 5
+      - 10
+      - 20
     noise_std_X:
       - 0.0
       - 0.01

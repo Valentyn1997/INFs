@@ -14,12 +14,16 @@ from src.models.utils import NormalizedRBF
 logger = logging.getLogger(__name__)
 
 
-class AIPTWKernelEstimator(InterventionalDensityEstimator):
+class AIPTWKDE(InterventionalDensityEstimator):
+    """
+    KDE: Semi-parametric A-IPTW interventional density estimator with kernels
+    Kim, K., Kim, J., and Kennedy, E. H. Causal effects based on distributional distances. arXiv preprint arXiv:1806.02935, 2018.
+    """
 
     tune_criterion = 'neg_mse_and_neg_bce'
 
     def __init__(self, args: DictConfig = None, **kwargs):
-        super(AIPTWKernelEstimator, self).__init__(args)
+        super(AIPTWKDE, self).__init__(args)
         self.cov_scaler = StandardScaler()
 
         # assert self.dim_out == 1
@@ -52,8 +56,9 @@ class AIPTWKernelEstimator(InterventionalDensityEstimator):
         model_args.lr = new_model_args['lr']
         model_args.batch_size = new_model_args['batch_size']
 
-    def prepare_train_data(self, data_dict: dict):
-        cov_f, treat_f, out_f = self.prepare_tensors(data_dict['cov_f'], data_dict['treat_f'], data_dict['out_f'], kind='torch')
+    def prepare_train_data(self, train_data_dict: dict):
+        cov_f, treat_f, out_f = self.prepare_tensors(train_data_dict['cov_f'], train_data_dict['treat_f'],
+                                                     train_data_dict['out_f'], kind='torch')
         self.hparams.dataset.n_samples_train = cov_f.shape[0]
         return cov_f, treat_f, out_f
 

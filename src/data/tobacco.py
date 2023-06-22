@@ -1,3 +1,5 @@
+# Credits to https://github.com/tom-beer/Synthetic-Control-Examples
+
 import pandas as pd
 import numpy as np
 import pyreadr
@@ -15,6 +17,13 @@ logger = logging.getLogger(__name__)
 
 
 class TobaccoControlProgram:
+    """
+    California’s tobacco control program, real-world dataset
+    Abadie, A., Diamond, A., and Hainmueller, J. Synthetic control methods for comparative case studies: Estimating the effect of
+    California’s tobacco control program. Journal of the American Statistical Association, 105(490): 493–505, 2010
+
+    Pre-processing from https://github.com/tom-beer/Synthetic-Control-Examples
+    """
 
     def __init__(self, normalize_out=False, **kwargs):
         df_outcome_raw = pd.read_csv(f'{ROOT_PATH}/data/tobacco_control/prop99.csv')
@@ -84,7 +93,7 @@ class TobaccoControlProgram:
 
         return np.array([lnincome_predictor, age15to24_predictor, retprice_predictor, beer_predictor]).T
 
-    def get_data(self):
+    def get_data(self) -> dict:
         out_0_f = np.expand_dims(np.concatenate([self.Z0, self.Y0], axis=0), -1)
         cov_0_f = self.X0
         time_f = np.repeat(np.expand_dims(np.arange(0, 31, dtype=float), (1, 2)), 38, 1)
