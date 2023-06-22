@@ -35,6 +35,6 @@ jobs:
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 src/ --count --max-complexity=10 --max-line-length=130 --statistics --ignore=F401,C901,W504
     - name: Test with pytest
-       run: |
-         # assuming we start within the package root, execute tests
-         PYTHONPATH=. pytest -n 2 tests/
+      run: |
+        # assuming we start within the package root, execute tests
+        PYTHONPATH=. pytest -n 2 tests/
