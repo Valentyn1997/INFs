@@ -1,4 +1,5 @@
 # INFs
+[![Conference](https://img.shields.io/badge/ICML23-Paper-blue])](https://proceedings.mlr.press/v202/melnychuk23a/melnychuk23a.pdf)
 [![arXiv](https://img.shields.io/badge/arXiv-2209.06203-b31b1b.svg)](https://arxiv.org/abs/2209.06203)
 [![Python application](https://github.com/Valentyn1997/INFs/actions/workflows/python-app.yml/badge.svg)](https://github.com/Valentyn1997/INFs/actions/workflows/python-app.yml)
 
