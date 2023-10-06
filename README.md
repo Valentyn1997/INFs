@@ -7,7 +7,7 @@ Normalizing Flows for Interventional Density Estimation
 
 <img width="1335" alt="image" src="https://github.com/Valentyn1997/INFs/assets/23198776/a3557641-9ac4-48de-b596-4c6679e56fc2">
 
-The project is built with following Python libraries:
+The project is built with the following Python libraries:
 1. [Pyro](https://pyro.ai/) - deep learning and probabilistic models (MDNs, NFs)
 2. [Hydra](https://hydra.cc/docs/intro/) - simplified command line arguments management
 3. [MlFlow](https://mlflow.org/) - experiments tracking
@@ -26,24 +26,24 @@ To start an experiments server, run:
 
 `mlflow server --port=5000`
 
-To access MlFLow web UI with all the experiments, connect via ssh:
+To access the MlFLow web UI with all the experiments, connect via ssh:
 
 `ssh -N -f -L localhost:5000:localhost:5000 <username>@<server-link>`
 
-Then, one can go to local browser http://localhost:5000.
+Then, one can go to the local browser http://localhost:5000.
 
 
 ## Experiments
 
-Main training script is universal for different methods and datasets. For details on mandatory arguments - see the main configuration file `config/config.yaml` and other files in `configs/` folder.
+The main training script is universal for different methods and datasets. For details on mandatory arguments - see the main configuration file `config/config.yaml` and other files in `configs/` folder.
 
-Generic script with logging and fixed random seed is following:
+Generic script with logging and fixed random seed is the following:
 ```console
-PYTHONPATH=.  python3 runnables/train.py +dataset=<dataset> +model=<backbone> exp.seed=10
+PYTHONPATH=.  python3 runnables/train.py +dataset=<dataset> +model=<model> exp.seed=10
 ```
 
 ### Models (baselines)
-One needs to choose a model and then fill the specific hyperparameters (they are left blank in the configs):
+One needs to choose a model and then fill in the specific hyperparameters (they are left blank in the configs):
 - Interventional Normalizing Flows (this paper):
   - main: `+model=infs_aiptw`
   - w/o stud flow (= [Conditional Normalizing Flow](https://arxiv.org/pdf/1802.04908.pdf)): `+model=infs_plugin`
@@ -54,7 +54,7 @@ One needs to choose a model and then fill the specific hyperparameters (they are
 - [Distributional Kernel Mean Embeddings](https://arxiv.org/pdf/1805.08845.pdf) (DKME): `+model=dkme`
 - TARNet* (extended distributional [TARNet](https://arxiv.org/abs/1606.03976)): `+model=gauss_tarnet_plugin`
 
-Models already have best hyperparameters saved (for each model and dataset), one can access them via: `+model/<dataset>_hparams=<model>` or `+model/<dataset>_hparams/<model>=<dataset_param>`. Hyperparameters for three variants of INFs are the same: `+model/<dataset>_hparams=infs`.
+Models already have the best hyperparameters saved (for each model and dataset), one can access them via: `+model/<dataset>_hparams=<model>` or `+model/<dataset>_hparams/<model>=<dataset_param>`. Hyperparameters for three variants of INFs are the same: `+model/<dataset>_hparams=infs`.
 
 To perform a manual hyperparameter tuning use the flags `model.tune_hparams=True`, and then see `model.hparams_grid`. 
 
@@ -92,7 +92,7 @@ One needs to specify a dataset / dataset generator (and some additional paramete
 - [HC-MNIST](https://github.com/anndvision/quince/blob/main/quince/library/datasets/hcmnist.py) dataset: `+dataset=hcmnist`
 
 ### Examples
-Example of running 10-fold run with INFs (main) on Synthetic data with b = [2.0, 3.0, 4.0]:
+Example of running a 10-fold run with INFs (main) on Synthetic data with b = [2.0, 3.0, 4.0]:
 ```console
 PYTHONPATH=. python3 runnables/train.py -m +dataset=polynomial_normal +model=infs_aiptw +model/polynomial_normal_hparams/infs='2.0','3.0','4.0' exp.seed=10
 ```
