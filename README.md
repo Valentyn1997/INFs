@@ -35,7 +35,7 @@ Then, one can go to the local browser http://localhost:5000.
 
 ## Experiments
 
-The main training script is universal for different methods and datasets. For details on mandatory arguments - see the main configuration file `config/config.yaml` and other files in `configs/` folder.
+The main training script is universal for different methods and datasets. For details on mandatory arguments - see the main configuration file `config/config.yaml` and other files in `config/` folder.
 
 Generic script with logging and fixed random seed is the following:
 ```console
